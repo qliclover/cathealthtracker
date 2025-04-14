@@ -19,6 +19,15 @@ function LoginPage() {
     }));
   };
 
+  const handleTestLogin = () => {
+    setFormData({
+      email: 'test2@example.com',
+      password: 'password123'
+    });
+    // 自动提交表单
+    handleSubmit(new Event('submit'));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -36,13 +45,13 @@ function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || '登录失败');
+        throw new Error(data.message || 'Login failed');
       }
 
-      // 保存token到localStorage
+      // Save token to localStorage
       localStorage.setItem('token', data.token);
       
-      // 导航到猫咪列表页面
+      // Navigate to cats list page
       navigate('/cats');
     } catch (err) {
       setError(err.message);
@@ -57,7 +66,7 @@ function LoginPage() {
         <div className="col-md-6">
           <div className="card shadow">
             <div className="card-body">
-              <h2 className="text-center mb-4">登录</h2>
+              <h2 className="text-center mb-4">Login</h2>
               
               {error && (
                 <div className="alert alert-danger" role="alert">
@@ -67,7 +76,7 @@ function LoginPage() {
 
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label htmlFor="email" className="form-label">邮箱</label>
+                  <label htmlFor="email" className="form-label">Email</label>
                   <input
                     type="email"
                     className="form-control"
@@ -80,7 +89,7 @@ function LoginPage() {
                 </div>
 
                 <div className="mb-3">
-                  <label htmlFor="password" className="form-label">密码</label>
+                  <label htmlFor="password" className="form-label">Password</label>
                   <input
                     type="password"
                     className="form-control"
@@ -92,19 +101,28 @@ function LoginPage() {
                   />
                 </div>
 
-                <div className="d-grid">
+                <div className="d-grid gap-2">
                   <button
                     type="submit"
                     className="btn btn-primary"
                     disabled={loading}
                   >
-                    {loading ? '登录中...' : '登录'}
+                    {loading ? 'Logging in...' : 'Login'}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleTestLogin}
+                    disabled={loading}
+                  >
+                    Use Test Account
                   </button>
                 </div>
               </form>
               
               <div className="mt-3 text-center">
-                <p>还没有账号? <a href="/register">点击注册</a></p>
+                <p>Don't have an account? <a href="/register">Register now</a></p>
               </div>
             </div>
           </div>
