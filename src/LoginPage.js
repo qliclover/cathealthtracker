@@ -24,7 +24,7 @@ function LoginPage() {
       email: 'test2@example.com',
       password: 'password123'
     });
-    // 自动提交表单
+    // Auto submit form
     handleSubmit(new Event('submit'));
   };
 
