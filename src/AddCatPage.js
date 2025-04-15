@@ -11,6 +11,8 @@ function AddCatPage() {
     weight: '',
     description: ''
   });
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -22,6 +24,20 @@ function AddCatPage() {
     }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -29,13 +45,24 @@ function AddCatPage() {
 
     try {
       const token = localStorage.getItem('token');
+      
+      // Use FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('breed', formData.breed);
+      formDataToSend.append('age', formData.age);
+      formDataToSend.append('weight', formData.weight);
+      
+      if (image) {
+        formDataToSend.append('image', image);
+      }
+
       const response = await fetch(API_ENDPOINTS.CREATE_CAT, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: formDataToSend // Don't set Content-Type header when using FormData
       });
 
       const data = await response.json();
@@ -67,6 +94,27 @@ function AddCatPage() {
               )}
 
               <form onSubmit={handleSubmit}>
+                {/* Image upload section */}
+                <div className="mb-3">
+                  <label htmlFor="image" className="form-label">Cat Photo</label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    id="image"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                  {imagePreview && (
+                    <div className="mt-2 cat-photo-container">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="cat-photo"
+                      />
+                    </div>
+                  )}
+                </div>
+
                 <div className="mb-3">
                   <label htmlFor="name" className="form-label">Name</label>
                   <input
@@ -141,7 +189,17 @@ function AddCatPage() {
                     className="btn btn-primary"
                     disabled={loading}
                   >
-                    {loading ? 'Adding...' : 'Add Cat'}
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-plus-circle me-2"></i>
+                        Add Cat
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

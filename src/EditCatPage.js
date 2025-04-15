@@ -12,6 +12,9 @@ function EditCatPage() {
     weight: '',
     description: ''
   });
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [currentImageUrl, setCurrentImageUrl] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -38,6 +41,11 @@ function EditCatPage() {
           weight: data.weight,
           description: data.description || ''
         });
+
+        // If cat has an image, set it as current image
+        if (data.imageUrl) {
+          setCurrentImageUrl(`${API_ENDPOINTS.BASE_URL}${data.imageUrl}`);
+        }
       } catch (err) {
         setError(err.message);
       }
@@ -54,6 +62,20 @@ function EditCatPage() {
     }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -61,13 +83,24 @@ function EditCatPage() {
 
     try {
       const token = localStorage.getItem('token');
+      
+      // Use FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('breed', formData.breed);
+      formDataToSend.append('age', formData.age);
+      formDataToSend.append('weight', formData.weight);
+      
+      if (image) {
+        formDataToSend.append('image', image);
+      }
+
       const response = await fetch(`${API_ENDPOINTS.UPDATE_CAT}/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: formDataToSend
       });
 
       const data = await response.json();
@@ -99,6 +132,36 @@ function EditCatPage() {
               )}
 
               <form onSubmit={handleSubmit}>
+                {/* Image upload section */}
+                <div className="mb-3">
+                  <label htmlFor="image" className="form-label">Cat Photo</label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    id="image"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                  {imagePreview ? (
+                    <div className="mt-2 cat-photo-container">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="cat-photo"
+                      />
+                    </div>
+                  ) : currentImageUrl ? (
+                    <div className="mt-2 cat-photo-container">
+                      <img 
+                        src={currentImageUrl} 
+                        alt="Current" 
+                        className="cat-photo"
+                      />
+                      <p className="text-muted small mt-1">Current photo</p>
+                    </div>
+                  ) : null}
+                </div>
+
                 <div className="mb-3">
                   <label htmlFor="name" className="form-label">Name</label>
                   <input
@@ -173,7 +236,17 @@ function EditCatPage() {
                     className="btn btn-primary"
                     disabled={loading}
                   >
-                    {loading ? 'Updating...' : 'Update Cat'}
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-check-circle me-2"></i>
+                        Update Cat
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

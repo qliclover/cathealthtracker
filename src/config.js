@@ -1,7 +1,12 @@
-// API Base URL配置
+// API Base URL configuration
 const API_BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://cathealthtracker-api.vercel.app/api'
   : 'http://localhost:3001/api';
+
+// Base URL for the API server (without /api path)
+const BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://cathealthtracker-api.vercel.app'
+  : 'http://localhost:3001';
 
 // Auth endpoints
 const AUTH_ENDPOINTS = {
@@ -25,6 +30,7 @@ const HEALTH_RECORD_ENDPOINTS = {
 };
 
 export const API_ENDPOINTS = {
+  BASE_URL,
   ...AUTH_ENDPOINTS,
   ...CAT_ENDPOINTS,
   ...HEALTH_RECORD_ENDPOINTS

@@ -109,9 +109,22 @@ function CatDetailsPage() {
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2>{cat.name}</h2>
                 <button className="btn btn-outline-primary" onClick={handleEditCat}>
+                  <i className="bi bi-pencil-square me-2"></i>
                   Edit Information
                 </button>
               </div>
+              
+              {/* Display cat photo if available */}
+              {cat.imageUrl && (
+                <div className="cat-photo-container mb-3">
+                  <img 
+                    src={`${API_ENDPOINTS.BASE_URL}${cat.imageUrl}`} 
+                    alt={cat.name} 
+                    className="cat-photo"
+                  />
+                </div>
+              )}
+              
               <div className="mb-3">
                 <strong>Breed:</strong> {cat.breed}
               </div>
@@ -136,28 +149,42 @@ function CatDetailsPage() {
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h3>Health Records</h3>
                 <button className="btn btn-primary" onClick={handleAddRecord}>
+                  <i className="bi bi-plus-circle me-2"></i>
                   Add Record
                 </button>
               </div>
 
               {!Array.isArray(records) || records.length === 0 ? (
-                <p className="text-muted">No health records yet</p>
+                <div className="empty-state">
+                  <p className="empty-state-text">No health records yet</p>
+                  <button className="btn btn-outline-primary mt-2" onClick={handleAddRecord}>
+                    Add First Health Record
+                  </button>
+                </div>
               ) : (
-                <div className="list-group">
+                <div className="list-group health-record-list">
                   {records.map((record) => (
                     <div key={record.id} className="list-group-item">
-                      <div className="d-flex justify-content-between align-items-center">
+                      <div className="d-flex justify-content-between align-items-start">
                         <div>
-                          <h5 className="mb-1">{record.type}</h5>
+                          <div className="mb-1">
+                            <span className={`record-badge record-badge-${record.type.toLowerCase()}`}>
+                              {record.type}
+                            </span>
+                          </div>
                           <p className="mb-1">
                             <small className="text-muted">
+                              <i className="bi bi-calendar3 me-1"></i>
                               {new Date(record.date).toLocaleDateString()}
                             </small>
                           </p>
                           <p className="mb-1">{record.description}</p>
                           {record.notes && (
                             <p className="mb-1">
-                              <small className="text-muted">Notes: {record.notes}</small>
+                              <small className="text-muted">
+                                <i className="bi bi-journal-text me-1"></i>
+                                Notes: {record.notes}
+                              </small>
                             </p>
                           )}
                         </div>
@@ -165,6 +192,7 @@ function CatDetailsPage() {
                           className="btn btn-sm btn-outline-secondary"
                           onClick={() => handleEditRecord(record.id)}
                         >
+                          <i className="bi bi-pencil me-1"></i>
                           Edit
                         </button>
                       </div>
