@@ -1,8 +1,12 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { PrismaClient } = require('@prisma/client');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 
 // Initialize Prisma with logging for easier debugging
 const prisma = new PrismaClient({
@@ -15,6 +19,39 @@ prisma.$connect()
   .catch((e) => console.error('Failed to connect to database:', e));
 
 const app = express();
+
+// 配置上传存储
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // 确保上传目录存在
+    const uploadDir = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // 生成唯一文件名
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'cat-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 限制5MB
+  fileFilter: function(req, file, cb) {
+    // 只接受图片文件
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
+
+// 静态文件服务
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Basic settings
 app.use(express.json());
@@ -193,9 +230,12 @@ app.get('/api/cats/:id', authenticateToken, async (req, res) => {
 });
 
 // Create a cat
-app.post('/api/cats', authenticateToken, async (req, res) => {
+app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res) => {
   try {
     const { name, breed, age, weight } = req.body;
+    
+    // 获取上传的图片URL (如果有)
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     const cat = await prisma.cat.create({
       data: {
@@ -203,6 +243,7 @@ app.post('/api/cats', authenticateToken, async (req, res) => {
         breed,
         age: age ? parseInt(age) : null,
         weight: weight ? parseFloat(weight) : null,
+        imageUrl,
         ownerId: req.user.userId
       }
     });
@@ -215,12 +256,12 @@ app.post('/api/cats', authenticateToken, async (req, res) => {
 });
 
 // Update a cat
-app.put('/api/cats/:id', authenticateToken, async (req, res) => {
+app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, res) => {
   try {
     const { name, breed, age, weight } = req.body;
     const catId = parseInt(req.params.id);
 
-    // Check if cat exists and belongs to current user
+    // 检查猫咪是否存在且属于当前用户
     const existingCat = await prisma.cat.findUnique({
       where: { id: catId }
     });
@@ -233,13 +274,20 @@ app.put('/api/cats/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to modify this cat' });
     }
 
+    // 处理图片更新
+    let imageUrl = existingCat.imageUrl;
+    if (req.file) {
+      imageUrl = `/uploads/${req.file.filename}`;
+    }
+
     const updatedCat = await prisma.cat.update({
       where: { id: catId },
       data: {
         name,
         breed,
         age: age ? parseInt(age) : null,
-        weight: weight ? parseFloat(weight) : null
+        weight: weight ? parseFloat(weight) : null,
+        imageUrl
       }
     });
 

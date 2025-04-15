@@ -26,6 +26,7 @@ model Cat {
   breed        String
   age          Int?
   weight       Float?
+  imageUrl     String?        
   owner        User           @relation(fields: [ownerId], references: [id])
   ownerId      Int
   healthRecords HealthRecord[]
