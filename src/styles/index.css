@@ -1,0 +1,5 @@
+/* Import all CSS files */
+@import './main.css';
+@import './components.css';
+@import './forms.css';
+@import './pages.css';

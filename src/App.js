@@ -9,8 +9,9 @@ import AddCatPage from './AddCatPage';
 import EditCatPage from './EditCatPage';
 import AddRecordPage from './AddRecordPage';
 import EditRecordPage from './EditRecordPage';
+import './styles/index.css'; // Import the styles
 
-// 保护路由组件
+// Protected route component
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -24,10 +25,10 @@ function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 简单检查token是否存在
+    // Simple check if token exists
     const token = localStorage.getItem('token');
     
-    // 如果用户没有登录且不在登录/注册页面，重定向到登录页面
+    // If user is not logged in and not on login/register page, redirect to login page
     if (!token) {
       const path = window.location.pathname;
       if (path !== '/login' && path !== '/register') {
@@ -42,22 +43,22 @@ function App() {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">加载中...</span>
+          <span className="visually-hidden">Loading...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="fade-in">
       <Navbar />
       <div className="container mt-4">
         <Routes>
-          {/* 公开路由 */}
+          {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
-          {/* 受保护路由 */}
+          {/* Protected routes */}
           <Route path="/cats" element={
             <ProtectedRoute>
               <CatListPage />
@@ -94,19 +95,19 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* 默认路由 */}
+          {/* Default route */}
           <Route path="/" element={<Navigate to="/cats" replace />} />
           
-          {/* 404路由 */}
+          {/* 404 route */}
           <Route path="*" element={
             <div className="alert alert-warning text-center mt-5">
-              <h3>页面不存在</h3>
-              <p>您访问的页面不存在或已被移除。</p>
+              <h3>Page Not Found</h3>
+              <p>The page you are looking for does not exist or has been moved.</p>
               <button 
                 className="btn btn-primary" 
                 onClick={() => navigate('/')}
               >
-                返回首页
+                Return to Home
               </button>
             </div>
           } />

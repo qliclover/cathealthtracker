@@ -1,0 +1,61 @@
+/* Global Styles */
+body {
+    font-family: 'Nunito', 'Segoe UI', Roboto, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+  }
+  
+  /* Animation for page transitions */
+  .fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Custom container padding for better mobile experience */
+  @media (max-width: 768px) {
+    .container {
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+  }
+  
+  /* Spinners */
+  .spinner-border {
+    border-width: 0.2em;
+    width: 2.5rem;
+    height: 2.5rem;
+    color: #2575fc;
+  }
+  
+  /* Alerts */
+  .alert {
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Empty state styling */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  
+  .empty-state-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+  }
+  
+  .empty-state-text {
+    color: #6c757d;
+    font-size: 1.1rem;
+  }
