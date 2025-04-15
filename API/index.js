@@ -2,15 +2,16 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const bcryptjs = require('bcryptjs'); // Using bcryptjs instead of bcrypt for better compatibility
+const bcryptjs = require('bcryptjs'); // Use bcryptjs for better compatibility
 const { PrismaClient } = require('@prisma/client');
 const path = require('path');
-const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
 
-// Initialize Prisma with logging for easier debugging
+// Initialize Prisma client with logging for easier debugging
 const prisma = new PrismaClient({
-  log: ['error', 'warn'],
+  log: ['error', 'warn']
 });
 
 // Test database connection
@@ -18,42 +19,38 @@ prisma.$connect()
   .then(() => console.log('Connected to database'))
   .catch((e) => console.error('Failed to connect to database:', e));
 
+// Configure Cloudinary using environment variables
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dx4mndj00',
+  api_key: process.env.CLOUDINARY_API_KEY || '237762943865176',
+  api_secret: process.env.CLOUDINARY_API_SECRET || '8r8SzjgfYkxgEOW5aXeq7l7x6TE'
+});
+
+// Create Cloudinary storage, all uploaded files will be stored in the specified folder
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'cathealthtracker', // Change the folder name as needed
+    allowed_formats: ['jpg', 'jpeg', 'png']
+  }
+});
+
+// Initialize multer with Cloudinary storage, also configure file size limit and file filter
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: function(req, file, cb) {
+    console.log("Upload file info:", file);
+    cb(null, true);
+  }
+});
+
 const app = express();
 
 // Basic settings
 app.use(express.json());
 
-// Configure file upload with smaller size limit
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Ensure uploads directory exists
-    const uploadDir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    // Generate unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, 'cat-' + uniqueSuffix + ext);
-  }
-});
-
-const upload = multer({ 
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, 
-    fileFilter: function(req, file, cb) {
-      console.log("upload file's info:", file);
-      return cb(null, true);
-    }
-  });
-
-// Static file serving for uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// CORS configuration - specify allowed origins
+// CORS configuration to allow requests from specific origins
 app.use(cors({
   origin: ['https://cathealthtracker.vercel.app', 'http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -77,7 +74,6 @@ app.get('/', (req, res) => {
 
 // Middleware: Verify JWT token
 const authenticateToken = (req, res, next) => {
-  // Skip authentication for OPTIONS requests
   if (req.method === 'OPTIONS') {
     return next();
   }
@@ -98,7 +94,7 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// User registration
+// User registration endpoint
 app.post('/api/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -112,7 +108,7 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    // Encrypt password (using bcryptjs)
+    // Hash password
     const hashedPassword = await bcryptjs.hash(password, 10);
 
     // Create user
@@ -148,12 +144,12 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// User login
+// User login endpoint
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
+    // Find user by email
     const user = await prisma.user.findUnique({
       where: { email }
     });
@@ -189,7 +185,7 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Get all cats
+// Get all cats for the authenticated user
 app.get('/api/cats', authenticateToken, async (req, res) => {
   try {
     const cats = await prisma.cat.findMany({
@@ -203,7 +199,7 @@ app.get('/api/cats', authenticateToken, async (req, res) => {
   }
 });
 
-// Get a single cat
+// Get a single cat along with its health records
 app.get('/api/cats/:id', authenticateToken, async (req, res) => {
   try {
     const cat = await prisma.cat.findUnique({
@@ -226,13 +222,12 @@ app.get('/api/cats/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Create a cat
+// Create a cat with image upload via Cloudinary
 app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res) => {
   try {
     const { name, breed, age, weight } = req.body;
-    
-    // Get uploaded image URL (if any)
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    // Use Cloudinary uploaded URL
+    const imageUrl = req.file ? req.file.path : null;
 
     const cat = await prisma.cat.create({
       data: {
@@ -252,13 +247,13 @@ app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res
   }
 });
 
-// Update a cat
+// Update cat information, including image update
 app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, res) => {
   try {
     const { name, breed, age, weight } = req.body;
     const catId = parseInt(req.params.id);
 
-    // Check if cat exists and belongs to current user
+    // Check if the cat exists and belongs to current user
     const existingCat = await prisma.cat.findUnique({
       where: { id: catId }
     });
@@ -271,10 +266,10 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
       return res.status(403).json({ message: 'Not authorized to modify this cat' });
     }
 
-    // Process image update
+    // If a new image is uploaded, use the Cloudinary URL returned
     let imageUrl = existingCat.imageUrl;
     if (req.file) {
-      imageUrl = `/uploads/${req.file.filename}`;
+      imageUrl = req.file.path;
     }
 
     const updatedCat = await prisma.cat.update({
@@ -295,13 +290,13 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
   }
 });
 
-// Add health record
+// Add a health record for a cat
 app.post('/api/cats/:catId/records', authenticateToken, async (req, res) => {
   try {
     const { type, date, description, notes } = req.body;
     const catId = parseInt(req.params.catId);
 
-    // Check if cat exists and belongs to current user
+    // Check if the cat exists and belongs to current user
     const cat = await prisma.cat.findUnique({
       where: { id: catId }
     });
@@ -331,12 +326,12 @@ app.post('/api/cats/:catId/records', authenticateToken, async (req, res) => {
   }
 });
 
-// Get cat health records
+// Get health records for a cat
 app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {
   try {
     const catId = parseInt(req.params.catId);
 
-    // Check if cat exists and belongs to current user
+    // Check if the cat exists and belongs to the current user
     const cat = await prisma.cat.findUnique({
       where: { id: catId }
     });
@@ -361,13 +356,13 @@ app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {
   }
 });
 
-// Update health record
+// Update a health record
 app.put('/api/records/:id', authenticateToken, async (req, res) => {
   try {
     const { type, date, description, notes } = req.body;
     const recordId = parseInt(req.params.id);
 
-    // Get record and check permissions
+    // Find the record and include associated cat
     const record = await prisma.healthRecord.findUnique({
       where: { id: recordId },
       include: { cat: true }
