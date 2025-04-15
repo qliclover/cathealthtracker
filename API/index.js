@@ -42,16 +42,13 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 1 * 1024 * 1024 }, // Limit to 1MB
-  fileFilter: function(req, file, cb) {
-    // Accept only image files
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return cb(new Error('Only image files are allowed!'), false);
+    storage: storage,
+    limits: { fileSize: 1 * 1024 * 1024 }, 
+    fileFilter: function(req, file, cb) {
+      console.log("upload file's info:", file);
+      return cb(null, true);
     }
-    cb(null, true);
-  }
-});
+  });
 
 // Static file serving for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

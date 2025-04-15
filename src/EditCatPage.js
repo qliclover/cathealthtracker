@@ -97,15 +97,14 @@ function EditCatPage() {
           
           // Convert to blob with compression
           canvas.toBlob((blob) => {
-            // Create a new File object from the blob
-            const compressedFile = new File([blob], file.name, {
-              type: 'image/jpeg',
+            const compressedFile = new File([blob], "cat_photo.jpg", {
+              type: "image/jpeg",
               lastModified: Date.now()
             });
             
             setImage(compressedFile);
             setImagePreview(URL.createObjectURL(blob));
-          }, 'image/jpeg', 0.7); // Compress to 70% quality
+          }, 'image/jpeg', 0.7);
         };
         img.src = event.target.result;
       };
