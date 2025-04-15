@@ -6,13 +6,13 @@ function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // 检查本地存储中是否有token来确定用户是否已登录
+    // Check if token exists in local storage to determine if user is logged in
     const token = localStorage.getItem('token');
     setIsLoggedIn(!!token);
   }, []);
 
   const handleLogout = () => {
-    // 清除token并导航到登录页面
+    // Clear token and navigate to login page
     localStorage.removeItem('token');
     setIsLoggedIn(false);
     navigate('/login');
@@ -21,7 +21,7 @@ function Navbar() {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
       <div className="container">
-        <Link className="navbar-brand" to="/">猫咪健康管理系统</Link>
+        <Link className="navbar-brand" to="/">Cat Health Tracker</Link>
         
         <button 
           className="navbar-toggler" 
@@ -37,24 +37,24 @@ function Navbar() {
             {isLoggedIn ? (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/cats">我的猫咪</Link>
+                  <Link className="nav-link" to="/cats">My Cats</Link>
                 </li>
                 <li className="nav-item">
                   <button 
                     className="nav-link btn btn-link" 
                     onClick={handleLogout}
                   >
-                    退出登录
+                    Logout
                   </button>
                 </li>
               </>
             ) : (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/login">登录</Link>
+                  <Link className="nav-link" to="/login">Login</Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/register">注册</Link>
+                  <Link className="nav-link" to="/register">Register</Link>
                 </li>
               </>
             )}

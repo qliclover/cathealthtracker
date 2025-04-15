@@ -29,7 +29,7 @@ function CatListPage() {
             navigate('/login');
             return;
           }
-          throw new Error('获取猫咪列表失败');
+          throw new Error('Failed to retrieve cat list');
         }
 
         const data = await response.json();
@@ -48,7 +48,7 @@ function CatListPage() {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">加载中...</span>
+          <span className="visually-hidden">Loading...</span>
         </div>
       </div>
     );
@@ -65,15 +65,15 @@ function CatListPage() {
   return (
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>我的猫咪</h2>
+        <h2>My Cats</h2>
         <Link to="/cats/add" className="btn btn-primary">
-          添加猫咪
+          Add Cat
         </Link>
       </div>
 
       {cats.length === 0 ? (
         <div className="alert alert-info">
-          您还没有添加任何猫咪。点击"添加猫咪"按钮来添加您的第一只猫咪。
+          You haven't added any cats yet. Click the "Add Cat" button to add your first cat.
         </div>
       ) : (
         <div className="row">
@@ -84,11 +84,11 @@ function CatListPage() {
                   <h5 className="card-title">{cat.name}</h5>
                   <h6 className="card-subtitle mb-2 text-muted">{cat.breed}</h6>
                   <p className="card-text">
-                    <strong>年龄:</strong> {cat.age} 岁<br />
-                    <strong>体重:</strong> {cat.weight} kg
+                    <strong>Age:</strong> {cat.age} years<br />
+                    <strong>Weight:</strong> {cat.weight} kg
                   </p>
                   <Link to={`/cats/${cat.id}`} className="btn btn-outline-primary">
-                    查看详情
+                    View Details
                   </Link>
                 </div>
               </div>

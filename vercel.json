@@ -24,6 +24,6 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://cathealthtracker.vercel.app/api"
+    "REACT_APP_API_URL": "https://cathealthtracker-api-qliclover-qian-lis-projects-4f6c7f3b.vercel.app/api"
   }
-} 
+}

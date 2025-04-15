@@ -153,4 +153,4 @@ function AddCatPage() {
   );
 }
 
-export default AddCatPage; 
+export default AddCatPage;

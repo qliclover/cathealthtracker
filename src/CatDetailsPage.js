@@ -179,4 +179,4 @@ function CatDetailsPage() {
   );
 }
 
-export default CatDetailsPage; 
+export default CatDetailsPage;

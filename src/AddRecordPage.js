@@ -37,7 +37,7 @@ function AddRecordPage() {
             navigate('/login');
             return;
           }
-          throw new Error('获取猫咪信息失败');
+          throw new Error('Failed to get cat information');
         }
 
         const data = await response.json();
@@ -87,10 +87,10 @@ function AddRecordPage() {
           navigate('/login');
           return;
         }
-        throw new Error('添加健康记录失败');
+        throw new Error('Failed to add health record');
       }
 
-      // 添加成功后返回猫咪详情页
+      // Navigate back to cat details page after successful addition
       navigate(`/cats/${id}`);
     } catch (err) {
       setError(err.message);
@@ -103,7 +103,7 @@ function AddRecordPage() {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">加载中...</span>
+          <span className="visually-hidden">Loading...</span>
         </div>
       </div>
     );
@@ -120,7 +120,7 @@ function AddRecordPage() {
   if (!cat) {
     return (
       <div className="alert alert-warning" role="alert">
-        未找到猫咪信息
+        Cat information not found
       </div>
     );
   }
@@ -131,7 +131,7 @@ function AddRecordPage() {
         <div className="col-md-6">
           <div className="card shadow">
             <div className="card-body">
-              <h2 className="card-title text-center mb-4">为 {cat.name} 添加健康记录</h2>
+              <h2 className="card-title text-center mb-4">Add Health Record for {cat.name}</h2>
               
               {error && (
                 <div className="alert alert-danger" role="alert">
@@ -141,7 +141,7 @@ function AddRecordPage() {
               
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label htmlFor="type" className="form-label">记录类型</label>
+                  <label htmlFor="type" className="form-label">Record Type</label>
                   <select
                     className="form-select"
                     id="type"
@@ -150,15 +150,15 @@ function AddRecordPage() {
                     onChange={handleChange}
                     required
                   >
-                    <option value="vaccination">疫苗接种</option>
-                    <option value="checkup">体检</option>
-                    <option value="medication">用药</option>
-                    <option value="other">其他</option>
+                    <option value="vaccination">Vaccination</option>
+                    <option value="checkup">Check-up</option>
+                    <option value="medication">Medication</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
                 
                 <div className="mb-3">
-                  <label htmlFor="date" className="form-label">日期</label>
+                  <label htmlFor="date" className="form-label">Date</label>
                   <input
                     type="date"
                     className="form-control"
@@ -171,7 +171,7 @@ function AddRecordPage() {
                 </div>
                 
                 <div className="mb-3">
-                  <label htmlFor="description" className="form-label">描述</label>
+                  <label htmlFor="description" className="form-label">Description</label>
                   <textarea
                     className="form-control"
                     id="description"
@@ -184,7 +184,7 @@ function AddRecordPage() {
                 </div>
                 
                 <div className="mb-3">
-                  <label htmlFor="notes" className="form-label">备注</label>
+                  <label htmlFor="notes" className="form-label">Notes</label>
                   <textarea
                     className="form-control"
                     id="notes"
@@ -201,14 +201,14 @@ function AddRecordPage() {
                     className="btn btn-primary"
                     disabled={submitLoading}
                   >
-                    {submitLoading ? '添加中...' : '添加记录'}
+                    {submitLoading ? 'Adding...' : 'Add Record'}
                   </button>
                   <button
                     type="button"
                     className="btn btn-outline-secondary"
                     onClick={() => navigate(`/cats/${id}`)}
                   >
-                    取消
+                    Cancel
                   </button>
                 </div>
               </form>

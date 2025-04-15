@@ -26,7 +26,7 @@ function EditRecordPage() {
           return;
         }
 
-        // 获取记录详情
+        // Get record details
         const response = await fetch(`${API_ENDPOINTS.UPDATE_RECORD}/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -39,14 +39,14 @@ function EditRecordPage() {
             navigate('/login');
             return;
           }
-          throw new Error('获取健康记录失败');
+          throw new Error('Failed to get health record');
         }
 
         const data = await response.json();
         setRecord(data);
         setCatId(data.catId);
         
-        // 格式化日期为YYYY-MM-DD格式
+        // Format date to YYYY-MM-DD format
         const formattedDate = new Date(data.date).toISOString().split('T')[0];
         
         setFormData({
@@ -100,10 +100,10 @@ function EditRecordPage() {
           navigate('/login');
           return;
         }
-        throw new Error('更新健康记录失败');
+        throw new Error('Failed to update health record');
       }
 
-      // 更新成功后返回猫咪详情页
+      // Navigate back to cat details page after successful update
       navigate(`/cats/${catId}`);
     } catch (err) {
       setError(err.message);
@@ -116,7 +116,7 @@ function EditRecordPage() {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">加载中...</span>
+          <span className="visually-hidden">Loading...</span>
         </div>
       </div>
     );
@@ -133,7 +133,7 @@ function EditRecordPage() {
   if (!record) {
     return (
       <div className="alert alert-warning" role="alert">
-        未找到健康记录
+        Health record not found
       </div>
     );
   }
@@ -144,11 +144,11 @@ function EditRecordPage() {
         <div className="col-md-6">
           <div className="card shadow">
             <div className="card-body">
-              <h2 className="card-title text-center mb-4">编辑健康记录</h2>
+              <h2 className="card-title text-center mb-4">Edit Health Record</h2>
               
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label htmlFor="type" className="form-label">记录类型</label>
+                  <label htmlFor="type" className="form-label">Record Type</label>
                   <select
                     className="form-select"
                     id="type"
@@ -157,15 +157,15 @@ function EditRecordPage() {
                     onChange={handleChange}
                     required
                   >
-                    <option value="vaccination">疫苗接种</option>
-                    <option value="checkup">体检</option>
-                    <option value="medication">用药</option>
-                    <option value="other">其他</option>
+                    <option value="vaccination">Vaccination</option>
+                    <option value="checkup">Check-up</option>
+                    <option value="medication">Medication</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
                 
                 <div className="mb-3">
-                  <label htmlFor="date" className="form-label">日期</label>
+                  <label htmlFor="date" className="form-label">Date</label>
                   <input
                     type="date"
                     className="form-control"
@@ -178,7 +178,7 @@ function EditRecordPage() {
                 </div>
                 
                 <div className="mb-3">
-                  <label htmlFor="description" className="form-label">描述</label>
+                  <label htmlFor="description" className="form-label">Description</label>
                   <textarea
                     className="form-control"
                     id="description"
@@ -191,7 +191,7 @@ function EditRecordPage() {
                 </div>
                 
                 <div className="mb-3">
-                  <label htmlFor="notes" className="form-label">备注</label>
+                  <label htmlFor="notes" className="form-label">Notes</label>
                   <textarea
                     className="form-control"
                     id="notes"
@@ -208,14 +208,14 @@ function EditRecordPage() {
                     className="btn btn-primary"
                     disabled={submitLoading}
                   >
-                    {submitLoading ? '更新中...' : '更新记录'}
+                    {submitLoading ? 'Updating...' : 'Update Record'}
                   </button>
                   <button
                     type="button"
                     className="btn btn-outline-secondary"
                     onClick={() => navigate(`/cats/${catId}`)}
                   >
-                    取消
+                    Cancel
                   </button>
                 </div>
               </form>

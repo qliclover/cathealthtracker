@@ -37,13 +37,13 @@ function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || '注册失败');
+        throw new Error(data.message || 'Registration failed');
       }
 
-      // 保存token到localStorage
+      // Save token to localStorage
       localStorage.setItem('token', data.token);
       
-      // 导航到猫咪列表页面
+      // Navigate to cats list page
       navigate('/cats');
     } catch (err) {
       setError(err.message);
@@ -58,7 +58,7 @@ function RegisterPage() {
         <div className="col-md-6">
           <div className="card shadow">
             <div className="card-body">
-              <h2 className="text-center mb-4">注册</h2>
+              <h2 className="text-center mb-4">Register</h2>
               
               {error && (
                 <div className="alert alert-danger" role="alert">
@@ -68,7 +68,7 @@ function RegisterPage() {
 
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label htmlFor="name" className="form-label">姓名</label>
+                  <label htmlFor="name" className="form-label">Name</label>
                   <input
                     type="text"
                     className="form-control"
@@ -81,7 +81,7 @@ function RegisterPage() {
                 </div>
 
                 <div className="mb-3">
-                  <label htmlFor="email" className="form-label">邮箱</label>
+                  <label htmlFor="email" className="form-label">Email</label>
                   <input
                     type="email"
                     className="form-control"
@@ -94,7 +94,7 @@ function RegisterPage() {
                 </div>
 
                 <div className="mb-3">
-                  <label htmlFor="password" className="form-label">密码</label>
+                  <label htmlFor="password" className="form-label">Password</label>
                   <input
                     type="password"
                     className="form-control"
@@ -112,13 +112,13 @@ function RegisterPage() {
                     className="btn btn-primary"
                     disabled={loading}
                   >
-                    {loading ? '注册中...' : '注册'}
+                    {loading ? 'Registering...' : 'Register'}
                   </button>
                 </div>
               </form>
               
               <div className="mt-3 text-center">
-                <p>已有账号? <a href="/login">点击登录</a></p>
+                <p>Already have an account? <a href="/login">Login here</a></p>
               </div>
             </div>
           </div>

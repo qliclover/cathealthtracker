@@ -1,29 +1,27 @@
-// API Base URL configuration
+// API Base URL配置
 const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://cathealthtracker-api.vercel.app'  // Production API URL
-  : 'http://localhost:3001';            // Development API URL
+  ? 'https://cathealthtracker-api-qliclover-qian-lis-projects-4f6c7f3b.vercel.app/api'
+  : 'http://localhost:3001/api';
 
 // Auth endpoints
 const AUTH_ENDPOINTS = {
-  REGISTER: `${API_BASE_URL}/api/auth/register`,
-  LOGIN: `${API_BASE_URL}/api/auth/login`,
-  VERIFY_TOKEN: `${API_BASE_URL}/api/auth/verify`,
-  GET_USER: `${API_BASE_URL}/api/auth/user`
+  REGISTER: `${API_BASE_URL}/register`,
+  LOGIN: `${API_BASE_URL}/login`
 };
 
 // Cat endpoints
 const CAT_ENDPOINTS = {
-  GET_CATS: `${API_BASE_URL}/api/cats`,
-  GET_CAT: (id) => `${API_BASE_URL}/api/cats/${id}`,
-  CREATE_CAT: `${API_BASE_URL}/api/cats`,
-  UPDATE_CAT: (id) => `${API_BASE_URL}/api/cats/${id}`
+  GET_CATS: `${API_BASE_URL}/cats`,
+  GET_CAT: `${API_BASE_URL}/cats`,
+  CREATE_CAT: `${API_BASE_URL}/cats`,
+  UPDATE_CAT: `${API_BASE_URL}/cats`
 };
 
 // Health Record endpoints
 const HEALTH_RECORD_ENDPOINTS = {
-  GET_CAT_RECORDS: (catId) => `${API_BASE_URL}/api/cats/${catId}/records`,
-  CREATE_RECORD: (catId) => `${API_BASE_URL}/api/cats/${catId}/records`,
-  UPDATE_RECORD: (id) => `${API_BASE_URL}/api/records/${id}`
+  GET_CAT_RECORDS: `${API_BASE_URL}/cats`,
+  CREATE_RECORD: `${API_BASE_URL}/cats`,
+  UPDATE_RECORD: `${API_BASE_URL}/records`
 };
 
 export const API_ENDPOINTS = {

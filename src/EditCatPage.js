@@ -185,4 +185,4 @@ function EditCatPage() {
   );
 }
 
-export default EditCatPage; 
+export default EditCatPage;
