@@ -50,7 +50,8 @@ function CatDetailsPage() {
         }
 
         const recordsData = await recordsResponse.json();
-        setRecords(recordsData);
+        // Ensure records is always an array
+        setRecords(Array.isArray(recordsData) ? recordsData : []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -139,7 +140,7 @@ function CatDetailsPage() {
                 </button>
               </div>
 
-              {records.length === 0 ? (
+              {!Array.isArray(records) || records.length === 0 ? (
                 <p className="text-muted">No health records yet</p>
               ) : (
                 <div className="list-group">
