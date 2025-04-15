@@ -1,421 +1,252 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const { PrismaClient } = require('@prisma/client');
-const path = require('path');
-const fs = require('fs');
-const multer = require('multer');
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from './config';
 
-// Initialize Prisma with logging for easier debugging
-const prisma = new PrismaClient({
-  log: ['error', 'warn'],
-});
-
-// Test database connection
-prisma.$connect()
-  .then(() => console.log('Connected to database'))
-  .catch((e) => console.error('Failed to connect to database:', e));
-
-const app = express();
-
-// 配置上传存储
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // 确保上传目录存在
-    const uploadDir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    // 生成唯一文件名
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, 'cat-' + uniqueSuffix + ext);
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 限制5MB
-  fileFilter: function(req, file, cb) {
-    // 只接受图片文件
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return cb(new Error('Only image files are allowed!'), false);
-    }
-    cb(null, true);
-  }
-});
-
-// 静态文件服务
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Basic settings
-app.use(express.json());
-
-// Simple CORS middleware - before any other middleware
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  // Handle OPTIONS requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
-
-// Root path handler
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Cat Health Tracker API is running',
-    version: '1.0.0',
-    endpoints: {
-      auth: ['/api/register', '/api/login'],
-      cats: ['/api/cats', '/api/cats/:id'],
-      records: ['/api/cats/:catId/records', '/api/records/:id']
-    }
+function AddCatPage() {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: '',
+    breed: '',
+    age: '',
+    weight: '',
+    description: ''
   });
-});
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-// Middleware: Verify JWT token
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value
+    }));
+  };
 
-  if (!token) {
-    return res.status(401).json({ message: 'Authentication token not provided' });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ message: 'Invalid authentication token' });
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Read and compress the image
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          // Create canvas for compression
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 600;
+          let width = img.width;
+          let height = img.height;
+          
+          // Resize while maintaining aspect ratio
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to blob with compression
+          canvas.toBlob((blob) => {
+            // Create a new File object from the blob
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            
+            setImage(compressedFile);
+            setImagePreview(URL.createObjectURL(blob));
+          }, 'image/jpeg', 0.7); // Compress to 70% quality
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
     }
-    req.user = user;
-    next();
-  });
-};
+  };
 
-// User registration
-app.post('/api/register', async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-    // Check if email already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email already registered' });
-    }
-
-    // Encrypt password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Use FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('breed', formData.breed);
+      formDataToSend.append('age', formData.age);
+      formDataToSend.append('weight', formData.weight);
+      
+      if (image) {
+        formDataToSend.append('image', image);
       }
-    });
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+      const response = await fetch(API_ENDPOINTS.CREATE_CAT, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataToSend // Don't set Content-Type header when using FormData
+      });
 
-    res.status(201).json({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to add cat');
       }
-    });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ 
-      message: 'Registration failed, please try again',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined 
-    });
-  }
-});
 
-// User login
-app.post('/api/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      navigate('/cats');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Verify password
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
+  return (
+    <div className="container mt-4">
+      <div className="row justify-content-center">
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-body">
+              <h2 className="card-title text-center mb-4">Add New Cat</h2>
+              
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
+              )}
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+              <form onSubmit={handleSubmit}>
+                {/* Image upload section */}
+                <div className="mb-3">
+                  <label htmlFor="image" className="form-label">Cat Photo</label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    id="image"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                  {imagePreview && (
+                    <div className="mt-2 cat-photo-container">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="cat-photo"
+                      />
+                      <p className="text-muted small mt-1">Image preview (compressed)</p>
+                    </div>
+                  )}
+                </div>
 
-    res.json({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email
-      }
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Login failed, please try again' });
-  }
-});
+                <div className="mb-3">
+                  <label htmlFor="name" className="form-label">Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
 
-// Get all cats
-app.get('/api/cats', authenticateToken, async (req, res) => {
-  try {
-    const cats = await prisma.cat.findMany({
-      where: { ownerId: req.user.userId },
-      orderBy: { createdAt: 'desc' }
-    });
-    res.json(cats);
-  } catch (error) {
-    console.error('Get cats error:', error);
-    res.status(500).json({ message: 'Failed to get cat list' });
-  }
-});
+                <div className="mb-3">
+                  <label htmlFor="breed" className="form-label">Breed</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="breed"
+                    name="breed"
+                    value={formData.breed}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
 
-// Get a single cat
-app.get('/api/cats/:id', authenticateToken, async (req, res) => {
-  try {
-    const cat = await prisma.cat.findUnique({
-      where: { id: parseInt(req.params.id) },
-      include: { healthRecords: true }
-    });
+                <div className="mb-3">
+                  <label htmlFor="age" className="form-label">Age (years)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    id="age"
+                    name="age"
+                    value={formData.age}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.1"
+                    required
+                  />
+                </div>
 
-    if (!cat) {
-      return res.status(404).json({ message: 'Cat not found' });
-    }
+                <div className="mb-3">
+                  <label htmlFor="weight" className="form-label">Weight (kg)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    id="weight"
+                    name="weight"
+                    value={formData.weight}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.1"
+                    required
+                  />
+                </div>
 
-    if (cat.ownerId !== req.user.userId) {
-      return res.status(403).json({ message: 'Not authorized to access this cat' });
-    }
+                <div className="mb-3">
+                  <label htmlFor="description" className="form-label">Description</label>
+                  <textarea
+                    className="form-control"
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows="3"
+                  />
+                </div>
 
-    res.json(cat);
-  } catch (error) {
-    console.error('Get cat error:', error);
-    res.status(500).json({ message: 'Failed to get cat information' });
-  }
-});
+                <div className="d-grid">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-plus-circle me-2"></i>
+                        Add Cat
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-// Create a cat
-app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res) => {
-  try {
-    const { name, breed, age, weight } = req.body;
-    
-    // 获取上传的图片URL (如果有)
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-
-    const cat = await prisma.cat.create({
-      data: {
-        name,
-        breed,
-        age: age ? parseInt(age) : null,
-        weight: weight ? parseFloat(weight) : null,
-        imageUrl,
-        ownerId: req.user.userId
-      }
-    });
-
-    res.status(201).json(cat);
-  } catch (error) {
-    console.error('Create cat error:', error);
-    res.status(500).json({ message: 'Failed to create cat' });
-  }
-});
-
-// Update a cat
-app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, res) => {
-  try {
-    const { name, breed, age, weight } = req.body;
-    const catId = parseInt(req.params.id);
-
-    // 检查猫咪是否存在且属于当前用户
-    const existingCat = await prisma.cat.findUnique({
-      where: { id: catId }
-    });
-
-    if (!existingCat) {
-      return res.status(404).json({ message: 'Cat not found' });
-    }
-
-    if (existingCat.ownerId !== req.user.userId) {
-      return res.status(403).json({ message: 'Not authorized to modify this cat' });
-    }
-
-    // 处理图片更新
-    let imageUrl = existingCat.imageUrl;
-    if (req.file) {
-      imageUrl = `/uploads/${req.file.filename}`;
-    }
-
-    const updatedCat = await prisma.cat.update({
-      where: { id: catId },
-      data: {
-        name,
-        breed,
-        age: age ? parseInt(age) : null,
-        weight: weight ? parseFloat(weight) : null,
-        imageUrl
-      }
-    });
-
-    res.json(updatedCat);
-  } catch (error) {
-    console.error('Update cat error:', error);
-    res.status(500).json({ message: 'Failed to update cat information' });
-  }
-});
-
-// Add health record
-app.post('/api/cats/:catId/records', authenticateToken, async (req, res) => {
-  try {
-    const { type, date, description, notes } = req.body;
-    const catId = parseInt(req.params.catId);
-
-    // Check if cat exists and belongs to current user
-    const cat = await prisma.cat.findUnique({
-      where: { id: catId }
-    });
-
-    if (!cat) {
-      return res.status(404).json({ message: 'Cat not found' });
-    }
-
-    if (cat.ownerId !== req.user.userId) {
-      return res.status(403).json({ message: 'Not authorized to add records for this cat' });
-    }
-
-    const record = await prisma.healthRecord.create({
-      data: {
-        type,
-        date: new Date(date),
-        description,
-        notes,
-        catId
-      }
-    });
-
-    res.status(201).json(record);
-  } catch (error) {
-    console.error('Add health record error:', error);
-    res.status(500).json({ message: 'Failed to add health record' });
-  }
-});
-
-// Get cat health records
-app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {
-  try {
-    const catId = parseInt(req.params.catId);
-
-    // Check if cat exists and belongs to current user
-    const cat = await prisma.cat.findUnique({
-      where: { id: catId }
-    });
-
-    if (!cat) {
-      return res.status(404).json({ message: 'Cat not found' });
-    }
-
-    if (cat.ownerId !== req.user.userId) {
-      return res.status(403).json({ message: 'Not authorized to view records for this cat' });
-    }
-
-    const records = await prisma.healthRecord.findMany({
-      where: { catId },
-      orderBy: { date: 'desc' }
-    });
-
-    res.json(records);
-  } catch (error) {
-    console.error('Get health records error:', error);
-    res.status(500).json({ message: 'Failed to get health records' });
-  }
-});
-
-// Update health record
-app.put('/api/records/:id', authenticateToken, async (req, res) => {
-  try {
-    const { type, date, description, notes } = req.body;
-    const recordId = parseInt(req.params.id);
-
-    // Get record and check permissions
-    const record = await prisma.healthRecord.findUnique({
-      where: { id: recordId },
-      include: { cat: true }
-    });
-
-    if (!record) {
-      return res.status(404).json({ message: 'Health record not found' });
-    }
-
-    if (record.cat.ownerId !== req.user.userId) {
-      return res.status(403).json({ message: 'Not authorized to modify this record' });
-    }
-
-    const updatedRecord = await prisma.healthRecord.update({
-      where: { id: recordId },
-      data: {
-        type,
-        date: new Date(date),
-        description,
-        notes
-      }
-    });
-
-    res.json(updatedRecord);
-  } catch (error) {
-    console.error('Update health record error:', error);
-    res.status(500).json({ message: 'Failed to update health record' });
-  }
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Server error:', err);
-  res.status(500).json({ 
-    message: 'Server error occurred', 
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined 
-  });
-});
-
-// Catch-all route for undefined endpoints
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Endpoint not found' });
-});
-
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+export default AddCatPage;
