@@ -1,8 +1,9 @@
 /* Navigation Bar */
 .navbar {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    background: linear-gradient(135deg, #FF6B98 0%, #9C27B0 100%);
     padding: 0.8rem 1rem;
+    border-radius: 0 0 20px 20px;
   }
   
   .navbar-brand {
@@ -24,63 +25,63 @@
   
   /* Buttons */
   .btn {
-    border-radius: 8px;
-    padding: 0.5rem 1.2rem;
-    font-weight: 500;
+    border-radius: 50px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
     transition: all 0.3s ease;
   }
   
   .btn-primary {
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    background: linear-gradient(135deg, #FF6B98 0%, #9C27B0 100%);
     border: none;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
   
   .btn-primary:hover {
-    background: linear-gradient(135deg, #5b0fb3 0%, #1a65e1 100%);
+    background: linear-gradient(135deg, #FF5B8D 0%, #8E24AA 100%);
     transform: translateY(-2px);
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
   }
   
   .btn-outline-primary {
-    border-color: #2575fc;
-    color: #2575fc;
+    border-color: #FF6B98;
+    color: #FF6B98;
   }
   
   .btn-outline-primary:hover {
-    background-color: #2575fc;
+    background-color: #FF6B98;
     color: white;
     transform: translateY(-2px);
   }
   
   .btn-secondary {
-    background-color: #6c757d;
+    background-color: #9575CD;
     border: none;
   }
   
   .btn-secondary:hover {
-    background-color: #5a6268;
+    background-color: #7E57C2;
     transform: translateY(-2px);
   }
   
   .btn-outline-secondary {
-    border-color: #6c757d;
-    color: #6c757d;
+    border-color: #9575CD;
+    color: #9575CD;
   }
   
   .btn-outline-secondary:hover {
-    background-color: #6c757d;
+    background-color: #9575CD;
     color: white;
   }
   
   /* Cards */
   .card {
     transition: all 0.3s ease;
-    border-radius: 12px;
+    border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
     border: none;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
   }
   
   .card:hover {
@@ -94,20 +95,20 @@
   
   .card-title {
     font-weight: 600;
-    color: #333;
+    color: #9C27B0;
     margin-bottom: 0.8rem;
   }
   
   .card-subtitle {
-    color: #6c757d;
+    color: #FF6B98;
     margin-bottom: 0.8rem;
   }
   
   /* List group items */
   .list-group-item {
     border: none;
-    border-radius: 8px;
-    margin-bottom: 10px;
+    border-radius: 15px;
+    margin-bottom: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
   }
@@ -115,4 +116,27 @@
   .list-group-item:hover {
     transform: translateX(3px);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Icons */
+  .bi {
+    margin-right: 5px;
+  }
+  
+  /* Cat specific elements */
+  .cat-icon {
+    font-size: 1.5rem;
+    color: #FF6B98;
+  }
+  
+  /* Badges */
+  .badge {
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-weight: 600;
+  }
+  
+  /* Tooltips */
+  .tooltip {
+    font-size: 0.85rem;
   }

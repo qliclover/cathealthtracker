@@ -1,33 +1,33 @@
 /* Forms */
 .form-control {
-    border-radius: 8px;
-    padding: 10px 15px;
+    border-radius: 50px;
+    padding: 12px 20px;
     border: 1px solid #ddd;
     transition: all 0.3s ease;
     box-shadow: none;
   }
   
   .form-control:focus {
-    box-shadow: 0 0 0 0.25rem rgba(37, 117, 252, 0.2);
-    border-color: #2575fc;
+    box-shadow: 0 0 0 0.25rem rgba(255, 107, 152, 0.25);
+    border-color: #FF6B98;
   }
   
   .form-label {
     font-weight: 500;
-    color: #495057;
+    color: #9C27B0;
     margin-bottom: 0.5rem;
   }
   
   .form-select {
-    border-radius: 8px;
-    padding: 10px 15px;
+    border-radius: 50px;
+    padding: 12px 20px;
     border: 1px solid #ddd;
     transition: all 0.3s ease;
   }
   
   .form-select:focus {
-    box-shadow: 0 0 0 0.25rem rgba(37, 117, 252, 0.2);
-    border-color: #2575fc;
+    box-shadow: 0 0 0 0.25rem rgba(255, 107, 152, 0.25);
+    border-color: #FF6B98;
   }
   
   /* Login and Register pages */
@@ -39,10 +39,63 @@
     max-width: 450px;
     margin: 0 auto;
     padding: 30px;
+    border-radius: 25px !important;
   }
   
   .auth-title {
     text-align: center;
     margin-bottom: 30px;
-    color: #2575fc;
+    color: #9C27B0;
+  }
+  
+  .auth-title h2 {
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  
+  /* Checkboxes & Radio buttons */
+  .form-check-input {
+    width: 1.2em;
+    height: 1.2em;
+    margin-top: 0.25em;
+    border: 2px solid #FF6B98;
+  }
+  
+  .form-check-input:checked {
+    background-color: #FF6B98;
+    border-color: #FF6B98;
+  }
+  
+  /* File Upload */
+  .form-control[type="file"] {
+    padding: 10px 15px;
+  }
+  
+  /* Text Areas */
+  textarea.form-control {
+    border-radius: 20px;
+  }
+  
+  /* Form Validation */
+  .was-validated .form-control:valid,
+  .form-control.is-valid {
+    border-color: #9ACD32;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%239ACD32' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+  }
+  
+  .was-validated .form-control:invalid,
+  .form-control.is-invalid {
+    border-color: #FF6B98;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23FF6B98'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23FF6B98' stroke='none'/%3e%3c/svg%3e");
+  }
+  
+  /* Placeholder text */
+  .form-control::placeholder {
+    color: #D1C4E9;
+    opacity: 0.7;
+  }
+  
+  /* Form group spacing */
+  .form-group, .mb-3 {
+    margin-bottom: 1.5rem !important;
   }

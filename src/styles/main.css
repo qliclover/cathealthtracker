@@ -1,8 +1,8 @@
 /* Global Styles */
 body {
     font-family: 'Nunito', 'Segoe UI', Roboto, sans-serif;
-    background-color: #f8f9fa;
-    color: #333;
+    background-color: #FDF9FD;
+    color: #5D4037;
   }
   
   /* Animation for page transitions */
@@ -21,6 +21,20 @@ body {
     }
   }
   
+  /* Bounce animation for interactive elements */
+  .bounce-hover:hover {
+    animation: bounce 0.5s ease infinite;
+  }
+  
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  
   /* Custom container padding for better mobile experience */
   @media (max-width: 768px) {
     .container {
@@ -34,13 +48,34 @@ body {
     border-width: 0.2em;
     width: 2.5rem;
     height: 2.5rem;
-    color: #2575fc;
+    color: #FF6B98;
   }
   
   /* Alerts */
   .alert {
-    border-radius: 8px;
+    border-radius: 20px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    border: none;
+  }
+  
+  .alert-danger {
+    background-color: #FFEBEE;
+    color: #E53935;
+  }
+  
+  .alert-success {
+    background-color: #E8F5E9;
+    color: #43A047;
+  }
+  
+  .alert-warning {
+    background-color: #FFF8E1;
+    color: #FFA000;
+  }
+  
+  .alert-info {
+    background-color: #E1F5FE;
+    color: #039BE5;
   }
   
   /* Empty state styling */
@@ -51,11 +86,76 @@ body {
   
   .empty-state-icon {
     font-size: 4rem;
-    color: #dee2e6;
+    color: #F8BBD0;
     margin-bottom: 20px;
   }
   
   .empty-state-text {
-    color: #6c757d;
+    color: #9C27B0;
     font-size: 1.1rem;
+  }
+  
+  /* Links */
+  a {
+    color: #FF6B98;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+  
+  a:hover {
+    color: #9C27B0;
+    text-decoration: none;
+  }
+  
+  /* Text colors */
+  .text-primary {
+    color: #9C27B0 !important;
+  }
+  
+  .text-secondary {
+    color: #FF6B98 !important;
+  }
+  
+  .text-muted {
+    color: #B39DDB !important;
+  }
+  
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    color: #9C27B0;
+  }
+  
+  /* Overriding Bootstrap container */
+  .container {
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+  
+  /* Paw print decoration */
+  .paw-decoration {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-size: 2rem;
+    color: #F8BBD0;
+    opacity: 0.5;
+    z-index: -1;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #FDF9FD;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #F8BBD0;
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #FF6B98;
   }
