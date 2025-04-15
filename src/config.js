@@ -1,6 +1,6 @@
 // API Base URL配置
 const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://cathealthtracker-api-qliclover-qian-lis-projects-4f6c7f3b.vercel.app/api'
+  ? 'https://cathealthtracker-api.vercel.app/api'
   : 'http://localhost:3001/api';
 
 // Auth endpoints
