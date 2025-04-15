@@ -8,45 +8,50 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const app = express();
 
-app.use(cors());
+// Configure CORS to allow requests from the frontend
+app.use(cors({
+  origin: ['https://cathealthtracker.vercel.app', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 app.use(express.json());
 
-// 中间件: 验证JWT token
+// Middleware: Verify JWT token
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ message: '未提供认证令牌' });
+    return res.status(401).json({ message: 'Authentication token not provided' });
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
-      return res.status(403).json({ message: '无效的认证令牌' });
+      return res.status(403).json({ message: 'Invalid authentication token' });
     }
     req.user = user;
     next();
   });
 };
 
-// 用户注册
+// User registration
 app.post('/api/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // 检查邮箱是否已存在
+    // Check if email already exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
 
     if (existingUser) {
-      return res.status(400).json({ message: '该邮箱已被注册' });
+      return res.status(400).json({ message: 'Email already registered' });
     }
 
-    // 加密密码
+    // Encrypt password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 创建用户
+    // Create user
     const user = await prisma.user.create({
       data: {
         name,
@@ -55,7 +60,7 @@ app.post('/api/register', async (req, res) => {
       }
     });
 
-    // 生成JWT token
+    // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
@@ -73,33 +78,33 @@ app.post('/api/register', async (req, res) => {
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ 
-      message: '注册失败,请重试',
+      message: 'Registration failed, please try again',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined 
     });
   }
 });
 
-// 用户登录
+// User login
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 查找用户
+    // Find user
     const user = await prisma.user.findUnique({
       where: { email }
     });
 
     if (!user) {
-      return res.status(401).json({ message: '邮箱或密码错误' });
+      return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // 验证密码
+    // Verify password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      return res.status(401).json({ message: '邮箱或密码错误' });
+      return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // 生成JWT token
+    // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
@@ -115,11 +120,11 @@ app.post('/api/login', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: '登录失败,请重试' });
+    res.status(500).json({ message: 'Login failed, please try again' });
   }
 });
 
-// 获取所有猫咪
+// Get all cats
 app.get('/api/cats', authenticateToken, async (req, res) => {
   try {
     const cats = await prisma.cat.findMany({
@@ -128,11 +133,11 @@ app.get('/api/cats', authenticateToken, async (req, res) => {
     });
     res.json(cats);
   } catch (error) {
-    res.status(500).json({ message: '获取猫咪列表失败' });
+    res.status(500).json({ message: 'Failed to get cat list' });
   }
 });
 
-// 获取单个猫咪
+// Get a single cat
 app.get('/api/cats/:id', authenticateToken, async (req, res) => {
   try {
     const cat = await prisma.cat.findUnique({
@@ -141,20 +146,20 @@ app.get('/api/cats/:id', authenticateToken, async (req, res) => {
     });
 
     if (!cat) {
-      return res.status(404).json({ message: '未找到猫咪' });
+      return res.status(404).json({ message: 'Cat not found' });
     }
 
     if (cat.ownerId !== req.user.userId) {
-      return res.status(403).json({ message: '无权访问此猫咪信息' });
+      return res.status(403).json({ message: 'Not authorized to access this cat' });
     }
 
     res.json(cat);
   } catch (error) {
-    res.status(500).json({ message: '获取猫咪信息失败' });
+    res.status(500).json({ message: 'Failed to get cat information' });
   }
 });
 
-// 创建猫咪
+// Create a cat
 app.post('/api/cats', authenticateToken, async (req, res) => {
   try {
     const { name, breed, age, weight } = req.body;
@@ -171,27 +176,27 @@ app.post('/api/cats', authenticateToken, async (req, res) => {
 
     res.status(201).json(cat);
   } catch (error) {
-    res.status(500).json({ message: '创建猫咪失败' });
+    res.status(500).json({ message: 'Failed to create cat' });
   }
 });
 
-// 更新猫咪
+// Update a cat
 app.put('/api/cats/:id', authenticateToken, async (req, res) => {
   try {
     const { name, breed, age, weight } = req.body;
     const catId = parseInt(req.params.id);
 
-    // 检查猫咪是否存在且属于当前用户
+    // Check if cat exists and belongs to current user
     const existingCat = await prisma.cat.findUnique({
       where: { id: catId }
     });
 
     if (!existingCat) {
-      return res.status(404).json({ message: '未找到猫咪' });
+      return res.status(404).json({ message: 'Cat not found' });
     }
 
     if (existingCat.ownerId !== req.user.userId) {
-      return res.status(403).json({ message: '无权修改此猫咪信息' });
+      return res.status(403).json({ message: 'Not authorized to modify this cat' });
     }
 
     const updatedCat = await prisma.cat.update({
@@ -206,27 +211,27 @@ app.put('/api/cats/:id', authenticateToken, async (req, res) => {
 
     res.json(updatedCat);
   } catch (error) {
-    res.status(500).json({ message: '更新猫咪信息失败' });
+    res.status(500).json({ message: 'Failed to update cat information' });
   }
 });
 
-// 添加健康记录
+// Add health record
 app.post('/api/cats/:catId/records', authenticateToken, async (req, res) => {
   try {
     const { type, date, description, notes } = req.body;
     const catId = parseInt(req.params.catId);
 
-    // 检查猫咪是否存在且属于当前用户
+    // Check if cat exists and belongs to current user
     const cat = await prisma.cat.findUnique({
       where: { id: catId }
     });
 
     if (!cat) {
-      return res.status(404).json({ message: '未找到猫咪' });
+      return res.status(404).json({ message: 'Cat not found' });
     }
 
     if (cat.ownerId !== req.user.userId) {
-      return res.status(403).json({ message: '无权为此猫咪添加记录' });
+      return res.status(403).json({ message: 'Not authorized to add records for this cat' });
     }
 
     const record = await prisma.healthRecord.create({
@@ -241,26 +246,26 @@ app.post('/api/cats/:catId/records', authenticateToken, async (req, res) => {
 
     res.status(201).json(record);
   } catch (error) {
-    res.status(500).json({ message: '添加健康记录失败' });
+    res.status(500).json({ message: 'Failed to add health record' });
   }
 });
 
-// 获取猫咪的健康记录
+// Get cat health records
 app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {
   try {
     const catId = parseInt(req.params.catId);
 
-    // 检查猫咪是否存在且属于当前用户
+    // Check if cat exists and belongs to current user
     const cat = await prisma.cat.findUnique({
       where: { id: catId }
     });
 
     if (!cat) {
-      return res.status(404).json({ message: '未找到猫咪' });
+      return res.status(404).json({ message: 'Cat not found' });
     }
 
     if (cat.ownerId !== req.user.userId) {
-      return res.status(403).json({ message: '无权查看此猫咪的记录' });
+      return res.status(403).json({ message: 'Not authorized to view records for this cat' });
     }
 
     const records = await prisma.healthRecord.findMany({
@@ -270,28 +275,28 @@ app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {
 
     res.json(records);
   } catch (error) {
-    res.status(500).json({ message: '获取健康记录失败' });
+    res.status(500).json({ message: 'Failed to get health records' });
   }
 });
 
-// 更新健康记录
+// Update health record
 app.put('/api/records/:id', authenticateToken, async (req, res) => {
   try {
     const { type, date, description, notes } = req.body;
     const recordId = parseInt(req.params.id);
 
-    // 获取记录并检查权限
+    // Get record and check permissions
     const record = await prisma.healthRecord.findUnique({
       where: { id: recordId },
       include: { cat: true }
     });
 
     if (!record) {
-      return res.status(404).json({ message: '未找到健康记录' });
+      return res.status(404).json({ message: 'Health record not found' });
     }
 
     if (record.cat.ownerId !== req.user.userId) {
-      return res.status(403).json({ message: '无权修改此记录' });
+      return res.status(403).json({ message: 'Not authorized to modify this record' });
     }
 
     const updatedRecord = await prisma.healthRecord.update({
@@ -306,11 +311,11 @@ app.put('/api/records/:id', authenticateToken, async (req, res) => {
 
     res.json(updatedRecord);
   } catch (error) {
-    res.status(500).json({ message: '更新健康记录失败' });
+    res.status(500).json({ message: 'Failed to update health record' });
   }
 });
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-}); 
+});
