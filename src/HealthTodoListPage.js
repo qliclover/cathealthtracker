@@ -6,16 +6,16 @@ function HealthTodoListPage() {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [newTodo, setNewTodo] = useState({ 
-    title: '', 
-    dueDate: '', 
+  // Initialize newTodo state with default type 'vaccination'
+  const [newTodo, setNewTodo] = useState({
+    title: '',
+    dueDate: '',
     catId: '',
-    type: 'vaccination' // Default type
+    type: 'vaccination'
   });
   const [cats, setCats] = useState([]);
   const navigate = useNavigate();
 
-  // Fetch cats and health records data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -25,26 +25,18 @@ function HealthTodoListPage() {
           return;
         }
 
-        // Fetch all cats
+        // Fetch list of cats
         const catsResponse = await fetch(API_ENDPOINTS.GET_CATS, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-
-        if (!catsResponse.ok) {
-          throw new Error('Failed to fetch cats');
-        }
-
+        if (!catsResponse.ok) throw new Error('Failed to fetch cats');
         const catsData = await catsResponse.json();
         setCats(catsData);
 
-        // Create default todo tasks
+        // Generate default reminders for each cat
         const defaultTodos = [];
-        
-        // Generate health reminders for each cat
         catsData.forEach(cat => {
-          // Vaccination reminder
+          // Annual vaccination reminder
           defaultTodos.push({
             id: `vaccine-${cat.id}`,
             title: `Annual vaccination for ${cat.name}`,
@@ -54,8 +46,7 @@ function HealthTodoListPage() {
             catName: cat.name,
             type: 'vaccination'
           });
-          
-          // Checkup reminder
+          // Quarterly checkup reminder
           defaultTodos.push({
             id: `checkup-${cat.id}`,
             title: `Regular checkup for ${cat.name}`,
@@ -66,7 +57,6 @@ function HealthTodoListPage() {
             type: 'checkup'
           });
         });
-        
         setTodos(defaultTodos);
       } catch (err) {
         setError(err.message);
@@ -78,24 +68,23 @@ function HealthTodoListPage() {
     fetchData();
   }, [navigate]);
 
-  // Get next annual date
+  // Calculate next annual date
   const getNextAnnualDate = () => {
     const date = new Date();
     date.setFullYear(date.getFullYear() + 1);
     return date.toISOString().split('T')[0];
   };
 
-  // Get next quarterly date
+  // Calculate next quarterly date
   const getNextQuarterlyDate = () => {
     const date = new Date();
     date.setMonth(date.getMonth() + 3);
     return date.toISOString().split('T')[0];
   };
 
-  // Add a new todo
+  // Add a new todo task
   const handleAddTodo = () => {
     if (!newTodo.title || !newTodo.dueDate || !newTodo.catId) return;
-    
     const cat = cats.find(c => c.id === parseInt(newTodo.catId));
     const newTask = {
       id: `todo-${Date.now()}`,
@@ -104,52 +93,57 @@ function HealthTodoListPage() {
       dueDate: newTodo.dueDate,
       catId: parseInt(newTodo.catId),
       catName: cat.name,
-      type: newTodo.type
+      type: newTodo.type // Use selected type
     };
-    
     setTodos([...todos, newTask]);
-    setNewTodo({ 
-      title: '', 
-      dueDate: '', 
-      catId: '',
-      type: 'vaccination' 
-    });
+    setNewTodo({ title: '', dueDate: '', catId: '', type: 'vaccination' });
   };
 
-  // Toggle todo completion status
-  const handleToggleComplete = (id) => {
-    setTodos(todos.map(todo => 
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
+  // Toggle completion status of a task
+  const handleToggleComplete = id => {
+    setTodos(
+      todos.map(todo =>
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo
+      )
+    );
   };
 
-  // Navigate to create health record page
-  const handleCreateRecord = (todo) => {
-    // Navigate to add record page with prefilled fields
-    navigate(`/cats/${todo.catId}/records/add?type=${todo.type}&title=${encodeURIComponent(todo.title)}`);
+  // Navigate to add record page with prefilled params
+  const handleCreateRecord = todo => {
+    navigate(
+      `/cats/${todo.catId}/records/add?type=${todo.type}&title=${encodeURIComponent(
+        todo.title
+      )}`
+    );
   };
 
-  // Get type badge class
-  const getTypeBadgeClass = (type) => {
-    switch(type) {
-      case 'vaccination': return 'bg-primary';
-      case 'checkup': return 'bg-info';
-      case 'followup': return 'bg-secondary';
-      case 'medication': return 'bg-warning';
-      case 'grooming': return 'bg-success';
-      default: return 'bg-secondary';
+  // Return a badge class based on task type
+  const getTypeBadgeClass = type => {
+    switch (type) {
+      case 'vaccination':
+        return 'bg-primary';
+      case 'checkup':
+        return 'bg-info';
+      case 'followup':
+        return 'bg-secondary';
+      case 'medication':
+        return 'bg-warning';
+      case 'grooming':
+        return 'bg-success';
+      default:
+        return 'bg-dark';
     }
   };
 
-  // Sort todos by due date
-  const sortedTodos = [...todos].sort((a, b) => 
-    new Date(a.dueDate) - new Date(b.dueDate)
+  // Sort tasks by due date
+  const sortedTodos = [...todos].sort(
+    (a, b) => new Date(a.dueDate) - new Date(b.dueDate)
   );
-  
-  // Get upcoming tasks (within 30 days)
-  const upcoming = sortedTodos.filter(todo => 
-    !todo.completed && 
-    new Date(todo.dueDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  // Filter upcoming tasks within 30 days
+  const upcoming = sortedTodos.filter(
+    todo =>
+      !todo.completed &&
+      new Date(todo.dueDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
   );
 
   if (loading) {
@@ -173,7 +167,8 @@ function HealthTodoListPage() {
   return (
     <div className="container mt-4">
       <h2 className="mb-4">Health Tasks</h2>
-      
+
+      {/* Upcoming tasks */}
       {upcoming.length > 0 && (
         <div className="card mb-4 border-warning">
           <div className="card-header bg-warning text-white">
@@ -182,35 +177,26 @@ function HealthTodoListPage() {
           <div className="card-body">
             <div className="list-group">
               {upcoming.map(todo => (
-                <div key={todo.id} className="list-group-item list-group-item-action">
-                  <div className="d-flex justify-content-between align-items-center">
+                <div key={todo.id} className="list-group-item d-flex justify-content-between align-items-center">
+                  <div>
+                    {/* Display type badge */}
+                    <span className={`badge ${getTypeBadgeClass(todo.type)} me-2`}>
+                      {todo.type.charAt(0).toUpperCase() + todo.type.slice(1)}
+                    </span>
+                    {todo.title}
                     <div>
-                      <h5 className="mb-1">
-                        <span className={`badge ${getTypeBadgeClass(todo.type)} me-2`}>
-                          {todo.type.charAt(0).toUpperCase() + todo.type.slice(1)}
-                        </span>
-                        {todo.title}
-                      </h5>
                       <small className="text-muted">
-                        <i className="bi bi-calendar3 me-1"></i>
-                        Due: {new Date(todo.dueDate).toLocaleDateString()}
+                        Due: {new Date(todo.dueDate).toLocaleDateString()} — Cat: {todo.catName}
                       </small>
-                      <p className="mb-1">Cat: {todo.catName}</p>
                     </div>
-                    <div>
-                      <button 
-                        className="btn btn-primary me-2"
-                        onClick={() => handleCreateRecord(todo)}
-                      >
-                        Create Record
-                      </button>
-                      <button 
-                        className="btn btn-success"
-                        onClick={() => handleToggleComplete(todo.id)}
-                      >
-                        Complete
-                      </button>
-                    </div>
+                  </div>
+                  <div>
+                    <button className="btn btn-primary btn-sm me-2" onClick={() => handleCreateRecord(todo)}>
+                      Create Record
+                    </button>
+                    <button className="btn btn-success btn-sm" onClick={() => handleToggleComplete(todo.id)}>
+                      Complete
+                    </button>
                   </div>
                 </div>
               ))}
@@ -218,30 +204,34 @@ function HealthTodoListPage() {
           </div>
         </div>
       )}
-      
+
+      {/* Add New Task Form */}
       <div className="card mb-4">
         <div className="card-header">
           <h4 className="mb-0">Add New Task</h4>
         </div>
         <div className="card-body">
-          <div className="row g-3">
-            <div className="col-md-3">
-              <select 
-                className="form-select" 
-                value={newTodo.catId}
-                onChange={(e) => setNewTodo({...newTodo, catId: e.target.value})}
-              >
-                <option value="">Select Cat</option>
-                {cats.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-            </div>
+          <div className="row g-2 align-items-center">
             <div className="col-md-3">
               <select
                 className="form-select"
+                value={newTodo.catId}
+                onChange={e => setNewTodo({ ...newTodo, catId: e.target.value })}
+              >
+                <option value="">Select Cat</option>
+                {cats.map(cat => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Task type selector */}
+            <div className="col-md-2">
+              <select
+                className="form-select"
                 value={newTodo.type}
-                onChange={(e) => setNewTodo({...newTodo, type: e.target.value})}
+                onChange={e => setNewTodo({ ...newTodo, type: e.target.value })}
               >
                 <option value="vaccination">Vaccination</option>
                 <option value="checkup">Check-up</option>
@@ -252,80 +242,77 @@ function HealthTodoListPage() {
               </select>
             </div>
             <div className="col-md-3">
-              <input 
-                type="text" 
-                className="form-control" 
+              <input
+                type="text"
+                className="form-control"
                 placeholder="Task description"
                 value={newTodo.title}
-                onChange={(e) => setNewTodo({...newTodo, title: e.target.value})}
+                onChange={e => setNewTodo({ ...newTodo, title: e.target.value })}
               />
             </div>
             <div className="col-md-2">
-              <input 
-                type="date" 
+              <input
+                type="date"
                 className="form-control"
                 value={newTodo.dueDate}
-                onChange={(e) => setNewTodo({...newTodo, dueDate: e.target.value})}
+                onChange={e => setNewTodo({ ...newTodo, dueDate: e.target.value })}
               />
             </div>
-            <div className="col-md-1">
-              <button 
-                className="btn btn-primary w-100"
-                onClick={handleAddTodo}
-              >
+            <div className="col-md-2">
+              <button className="btn btn-primary w-100" onClick={handleAddTodo}>
                 Add
               </button>
             </div>
           </div>
         </div>
       </div>
-      
+
+      {/* All tasks list */}
       <div className="card">
         <div className="card-header">
           <h4 className="mb-0">All Tasks</h4>
         </div>
         <div className="card-body">
-          <div className="list-group">
-            {sortedTodos.length === 0 ? (
-              <p>No tasks found. Add your first health reminder above.</p>
-            ) : (
-              sortedTodos.map(todo => (
-                <div key={todo.id} className={`list-group-item list-group-item-action ${todo.completed ? 'list-group-item-success' : ''}`}>
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div className={todo.completed ? 'text-decoration-line-through' : ''}>
-                      <h5 className="mb-1">
-                        <span className={`badge ${getTypeBadgeClass(todo.type)} me-2`}>
-                          {todo.type.charAt(0).toUpperCase() + todo.type.slice(1)}
-                        </span>
-                        {todo.title}
-                      </h5>
-                      <small className="text-muted">
-                        <i className="bi bi-calendar3 me-1"></i>
-                        Due: {new Date(todo.dueDate).toLocaleDateString()}
-                      </small>
-                      <p className="mb-1">Cat: {todo.catName}</p>
-                    </div>
-                    <div>
-                      {!todo.completed && (
-                        <button 
-                          className="btn btn-primary btn-sm me-2"
-                          onClick={() => handleCreateRecord(todo)}
-                        >
-                          Create Record
-                        </button>
-                      )}
-                      <button 
-                        className={`btn btn-sm ${todo.completed ? 'btn-outline-success' : 'btn-success'}`}
-                        onClick={() => handleToggleComplete(todo.id)}
-                      >
-                        {todo.completed ? 'Undo' : 'Complete'}
-                      </button>
-                    </div>
+          {sortedTodos.length === 0 ? (
+            <p>No tasks found.</p>
+          ) : (
+            sortedTodos.map(todo => (
+              <div
+                key={todo.id}
+                className={`list-group-item d-flex justify-content-between align-items-center ${
+                  todo.completed ? 'list-group-item-success' : ''
+                }`}
+              >
+                <div className={todo.completed ? 'text-decoration-line-through' : ''}>
+                  {/* Display type badge */}
+                  <span className={`badge ${getTypeBadgeClass(todo.type)} me-2`}>
+                    {todo.type.charAt(0).toUpperCase() + todo.type.slice(1)}
+                  </span>
+                  {todo.title}
+                  <div>
+                    <small className="text-muted">
+                      Due: {new Date(todo.dueDate).toLocaleDateString()} — Cat: {todo.catName}
+                    </small>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+                <div>
+                  {!todo.completed && (
+                    <button className="btn btn-primary btn-sm me-2" onClick={() => handleCreateRecord(todo)}>
+                      Create Record
+                    </button>
+                  )}
+                  <button
+                    className={`btn btn-sm ${
+                      todo.completed ? 'btn-outline-success' : 'btn-success'
+                    }`}
+                    onClick={() => handleToggleComplete(todo.id)}
+                  >
+                    {todo.completed ? 'Undo' : 'Complete'}
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

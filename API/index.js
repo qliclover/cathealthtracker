@@ -7,6 +7,7 @@ const { PrismaClient } = require('@prisma/client');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const ical = require('ical-generator');
 
 // Initialize Prisma client with logging for easier debugging
 const prisma = new PrismaClient({
@@ -599,6 +600,49 @@ app.use((err, req, res, next) => {
     message: 'Server error occurred', 
     error: process.env.NODE_ENV === 'development' ? err.message : undefined 
   });
+});
+
+// Calendar subscription endpoint
+app.get('/api/calendar.ics', authenticateToken, async (req, res) => {
+  // Fetch cats for the authenticated user
+  const cats = await prisma.cat.findMany({ where: { ownerId: req.user.userId } });
+
+  // Create iCal calendar
+  const cal = ical({
+    domain: process.env.APP_DOMAIN,
+    name: 'Cat Health Reminders',
+    timezone: process.env.TIMEZONE
+  });
+
+  const now = new Date();
+  cats.forEach(cat => {
+    // Annual vaccination event
+    const nextVaccine = new Date(now);
+    nextVaccine.setFullYear(nextVaccine.getFullYear() + 1);
+    cal.createEvent({
+      start: nextVaccine,
+      allDay: true,
+      id: `vaccine-${cat.id}@yourapp`,
+      summary: `Annual vaccination for ${cat.name}`,
+      description: `Reminder: annual vaccination for ${cat.name}.`
+    });
+
+    // Quarterly checkup event
+    const nextCheckup = new Date(now);
+    nextCheckup.setMonth(nextCheckup.getMonth() + 3);
+    cal.createEvent({
+      start: nextCheckup,
+      allDay: true,
+      id: `checkup-${cat.id}@yourapp`,
+      summary: `Quarterly checkup for ${cat.name}`,
+      description: `Reminder: quarterly checkup for ${cat.name}.`
+    });
+  });
+
+  // Send as .ics file
+  res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="cat-health.ics"');
+  cal.serve(res);
 });
 
 // Catch-all route for undefined endpoints
