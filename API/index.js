@@ -20,28 +20,24 @@ prisma.$connect()
 
 const app = express();
 
+// CORS middleware to ensure all responses have proper headers,
+// including error responses
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://cathealthtracker.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(204).send();
+  }
+  next();
+});
+
 // Basic settings
 app.use(express.json());
 
-// Configure file upload using disk storage
-// (For cat images and record file uploads; adjust as needed)
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Ensure uploads directory exists
-    const uploadDir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    // Generate unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, 'file-' + uniqueSuffix + ext);
-  }
-});
-
+// Simplified file handling for serverless environment
+const storage = multer.memoryStorage();  // Use memory storage instead of disk
 const upload = multer({ 
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -50,15 +46,6 @@ const upload = multer({
     cb(null, true);
   }
 });
-
-// CORS configuration to allow requests from specific origins
-app.use(cors({
-  origin: ['https://cathealthtracker.vercel.app', 'http://localhost:3000'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 204
-}));
 
 // Root path handler
 app.get('/', (req, res) => {
@@ -224,13 +211,13 @@ app.get('/api/cats/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Create a cat with image upload via Cloudinary (or disk storage)
+// Create a cat with placeholder image
 app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res) => {
   try {
     const { name, breed, age, weight } = req.body;
     
-    // Get uploaded image URL (if any)
-    const imageUrl = req.file ? req.file.path : null;
+    // Use placeholder image URL instead of file upload
+    const imageUrl = "https://placehold.co/400x300?text=Cat+Photo";
 
     const cat = await prisma.cat.create({
       data: {
@@ -250,7 +237,7 @@ app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res
   }
 });
 
-// Update cat information, including image update
+// Update cat information
 app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, res) => {
   try {
     const { name, breed, age, weight } = req.body;
@@ -269,11 +256,8 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
       return res.status(403).json({ message: 'Not authorized to modify this cat' });
     }
 
-    // If a new image is uploaded, use the returned file path from multer
-    let imageUrl = existingCat.imageUrl;
-    if (req.file) {
-      imageUrl = req.file.path;
-    }
+    // Keep existing image or use placeholder
+    const imageUrl = existingCat.imageUrl || "https://placehold.co/400x300?text=Cat+Photo";
 
     const updatedCat = await prisma.cat.update({
       where: { id: catId },
@@ -293,7 +277,7 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
   }
 });
 
-// Add a health record for a cat, with file upload support
+// Add a health record for a cat
 app.post('/api/cats/:catId/records', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     const { type, date, description, notes } = req.body;
@@ -312,8 +296,8 @@ app.post('/api/cats/:catId/records', authenticateToken, upload.single('file'), a
       return res.status(403).json({ message: 'Not authorized to add records for this cat' });
     }
 
-    // Retrieve uploaded file URL from file upload, if provided
-    const fileUrl = req.file ? req.file.path : null;
+    // For file uploads, use a placeholder file URL
+    const fileUrl = req.file ? "https://placehold.co/100x100?text=File" : null;
 
     const record = await prisma.healthRecord.create({
       data: {
@@ -321,7 +305,7 @@ app.post('/api/cats/:catId/records', authenticateToken, upload.single('file'), a
         date: new Date(date),
         description,
         notes,
-        fileUrl,  // Save file URL if file uploaded
+        fileUrl,
         catId
       }
     });
@@ -390,7 +374,7 @@ app.get('/api/records/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Update a health record with file upload support
+// Update a health record
 app.put('/api/records/:id', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     const { type, date, description, notes } = req.body;
@@ -411,10 +395,10 @@ app.put('/api/records/:id', authenticateToken, upload.single('file'), async (req
       return res.status(403).json({ message: 'Not authorized to modify this record' });
     }
 
-    // If a new file is uploaded, update fileUrl; otherwise, retain the existing fileUrl
+    // Keep existing file URL or use a placeholder if a new file is uploaded
     let fileUrl = record.fileUrl;
     if (req.file) {
-      fileUrl = req.file.path;
+      fileUrl = "https://placehold.co/100x100?text=File";
     }
 
     const updatedRecord = await prisma.healthRecord.update({
@@ -435,9 +419,15 @@ app.put('/api/records/:id', authenticateToken, upload.single('file'), async (req
   }
 });
 
-// Error handling middleware
+// Enhanced error handling middleware with CORS headers
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
+  
+  // Ensure CORS headers are set even on errors
+  res.header('Access-Control-Allow-Origin', 'https://cathealthtracker.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
   res.status(500).json({ 
     message: 'Server error occurred', 
     error: process.env.NODE_ENV === 'development' ? err.message : undefined 
