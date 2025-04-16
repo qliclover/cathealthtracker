@@ -13,6 +13,8 @@ function EditRecordPage() {
     description: '',
     notes: ''
   });
+  const [file, setFile] = useState(null);
+  const [currentFileUrl, setCurrentFileUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,6 +57,11 @@ function EditRecordPage() {
           description: data.description,
           notes: data.notes || ''
         });
+        
+        // If record has a file, set it as current file
+        if (data.fileUrl) {
+          setCurrentFileUrl(data.fileUrl);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -73,6 +80,13 @@ function EditRecordPage() {
     }));
   };
 
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitLoading(true);
@@ -85,13 +99,23 @@ function EditRecordPage() {
         return;
       }
 
+      // Use FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('type', formData.type);
+      formDataToSend.append('date', formData.date);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('notes', formData.notes);
+      
+      if (file) {
+        formDataToSend.append('file', file);
+      }
+
       const response = await fetch(`${API_ENDPOINTS.UPDATE_RECORD}/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: formDataToSend
       });
 
       if (!response.ok) {
@@ -202,13 +226,41 @@ function EditRecordPage() {
                   />
                 </div>
                 
+                {/* File upload section */}
+                <div className="mb-3">
+                  <label htmlFor="file" className="form-label">Upload File (optional)</label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    id="file"
+                    onChange={handleFileChange}
+                  />
+                  {currentFileUrl && !file && (
+                    <div className="mt-2">
+                      <p className="mb-1">Current file:</p>
+                      <a href={currentFileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-info">
+                        <i className="bi bi-file-earmark me-1"></i>
+                        View File
+                      </a>
+                      <small className="d-block text-muted mt-1">Upload a new file to replace the current one</small>
+                    </div>
+                  )}
+                </div>
+                
                 <div className="d-grid gap-2">
                   <button
                     type="submit"
                     className="btn btn-primary"
                     disabled={submitLoading}
                   >
-                    {submitLoading ? 'Updating...' : 'Update Record'}
+                    {submitLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Updating...
+                      </>
+                    ) : (
+                      'Update Record'
+                    )}
                   </button>
                   <button
                     type="button"
