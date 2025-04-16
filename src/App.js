@@ -10,6 +10,7 @@ import EditCatPage from './EditCatPage';
 import AddRecordPage from './AddRecordPage';
 import EditRecordPage from './EditRecordPage';
 import HealthCalendarPage from './HealthCalendarPage';
+import HealthTodoListPage from './HealthTodoListPage';
 import './styles/index.css'; // Import the styles
 
 // Protected route component
@@ -99,6 +100,12 @@ function App() {
           <Route path="/calendar" element={
             <ProtectedRoute>
               <HealthCalendarPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/todos" element={
+            <ProtectedRoute>
+              <HealthTodoListPage />
             </ProtectedRoute>
           } />
           

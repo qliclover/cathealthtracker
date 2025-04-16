@@ -150,7 +150,7 @@ function HealthTodoListPage() {
 
   return (
     <div className="container mt-4">
-      <h2 className="mb-4">Health Todos</h2>
+      <h2 className="mb-4">Health Tasks</h2>
       
       {upcoming.length > 0 && (
         <div className="card mb-4 border-warning">
