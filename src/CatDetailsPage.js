@@ -5,11 +5,32 @@ import { API_ENDPOINTS } from './config';
 function CatDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  
+  // State for storing cat info and health records
   const [cat, setCat] = useState(null);
   const [records, setRecords] = useState([]);
+  
+  // State for keeping track of which records are expanded (record id as key)
+  const [expandedRecords, setExpandedRecords] = useState({});
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Function to truncate text if it's too long
+  const truncate = (text, limit) => {
+    if (!text) return '';
+    return text.length > limit ? text.slice(0, limit) + '...' : text;
+  };
+
+  // Toggle expanded/collapsed state for a record
+  const toggleExpand = (recordId) => {
+    setExpandedRecords(prevState => ({
+      ...prevState,
+      [recordId]: !prevState[recordId]
+    }));
+  };
+
+  // Fetch cat info and health records
   useEffect(() => {
     const fetchCatDetails = async () => {
       try {
@@ -18,14 +39,12 @@ function CatDetailsPage() {
           navigate('/login');
           return;
         }
-
-        // Fetch cat information using the correct endpoint
+        // Fetch cat basic information
         const catResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-
         if (!catResponse.ok) {
           if (catResponse.status === 401) {
             localStorage.removeItem('token');
@@ -34,23 +53,19 @@ function CatDetailsPage() {
           }
           throw new Error('Failed to fetch cat information');
         }
-
         const catData = await catResponse.json();
         setCat(catData);
 
-        // Fetch health records using the correct endpoint
+        // Fetch health records for the cat
         const recordsResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/records`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-
         if (!recordsResponse.ok) {
           throw new Error('Failed to fetch health records');
         }
-
         const recordsData = await recordsResponse.json();
-        // Ensure records is always an array
         setRecords(Array.isArray(recordsData) ? recordsData : []);
       } catch (err) {
         setError(err.message);
@@ -62,6 +77,7 @@ function CatDetailsPage() {
     fetchCatDetails();
   }, [id, navigate]);
 
+  // Navigation functions
   const handleEditCat = () => {
     navigate(`/cats/${id}/edit`);
   };
@@ -103,6 +119,7 @@ function CatDetailsPage() {
   return (
     <div className="container mt-4">
       <div className="row">
+        {/* Cat Basic Information */}
         <div className="col-md-6">
           <div className="card mb-4">
             <div className="card-body">
@@ -113,8 +130,7 @@ function CatDetailsPage() {
                   Edit Information
                 </button>
               </div>
-              
-              {/* Display cat photo if available */}
+              {/* Show cat photo if available */}
               {cat.imageUrl && (
                 <div className="cat-photo-container mb-3">
                   <img 
@@ -124,7 +140,6 @@ function CatDetailsPage() {
                   />
                 </div>
               )}
-              
               <div className="mb-3">
                 <strong>Breed:</strong> {cat.breed}
               </div>
@@ -143,6 +158,7 @@ function CatDetailsPage() {
           </div>
         </div>
 
+        {/* Health Records List */}
         <div className="col-md-6">
           <div className="card">
             <div className="card-body">
@@ -178,7 +194,21 @@ function CatDetailsPage() {
                               {new Date(record.date).toLocaleDateString()}
                             </small>
                           </p>
-                          <p className="mb-1">{record.description}</p>
+                          {/* Display record description with expand/collapse functionality */}
+                          <p className="mb-1">
+                            {record.description && (expandedRecords[record.id] 
+                              ? record.description 
+                              : truncate(record.description, 100)
+                            )}
+                            {record.description && record.description.length > 100 && (
+                              <button
+                                className="btn btn-link p-0 ms-2"
+                                onClick={() => toggleExpand(record.id)}
+                              >
+                                {expandedRecords[record.id] ? 'Show less' : 'Read more'}
+                              </button>
+                            )}
+                          </p>
                           {record.notes && (
                             <p className="mb-1">
                               <small className="text-muted">
