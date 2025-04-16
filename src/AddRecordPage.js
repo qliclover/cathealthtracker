@@ -12,6 +12,7 @@ function AddRecordPage() {
     description: '',
     notes: ''
   });
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState('');
@@ -60,6 +61,13 @@ function AddRecordPage() {
     }));
   };
 
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitLoading(true);
@@ -72,13 +80,22 @@ function AddRecordPage() {
         return;
       }
 
+      // Record file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('type', formData.type);
+      formDataToSend.append('date', formData.date);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('notes', formData.notes);
+      if (file) {
+        formDataToSend.append('file', file);
+      }
+
       const response = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/records`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: formDataToSend
       });
 
       if (!response.ok) {
@@ -90,7 +107,7 @@ function AddRecordPage() {
         throw new Error('Failed to add health record');
       }
 
-      // Navigate back to cat details page after successful addition
+      // 提交成功后跳转回猫咪详情页
       navigate(`/cats/${id}`);
     } catch (err) {
       setError(err.message);
@@ -192,6 +209,17 @@ function AddRecordPage() {
                     value={formData.notes}
                     onChange={handleChange}
                     rows="2"
+                  />
+                </div>
+                
+                <div className="mb-3">
+                  <label htmlFor="file" className="form-label">Upload File (optional)</label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    id="file"
+                    name="file"
+                    onChange={handleFileChange}
                   />
                 </div>
                 

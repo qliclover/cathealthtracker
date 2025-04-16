@@ -291,40 +291,44 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
 });
 
 // Add a health record for a cat
-app.post('/api/cats/:catId/records', authenticateToken, async (req, res) => {
-  try {
-    const { type, date, description, notes } = req.body;
-    const catId = parseInt(req.params.catId);
-
-    // Check if the cat exists and belongs to current user
-    const cat = await prisma.cat.findUnique({
-      where: { id: catId }
-    });
-
-    if (!cat) {
-      return res.status(404).json({ message: 'Cat not found' });
-    }
-
-    if (cat.ownerId !== req.user.userId) {
-      return res.status(403).json({ message: 'Not authorized to add records for this cat' });
-    }
-
-    const record = await prisma.healthRecord.create({
-      data: {
-        type,
-        date: new Date(date),
-        description,
-        notes,
-        catId
+app.post('/api/cats/:catId/records', authenticateToken, upload.single('file'), async (req, res) => {
+    try {
+      const { type, date, description, notes } = req.body;
+      const catId = parseInt(req.params.catId);
+  
+      // Check if the cat exists and belongs to current user
+      const cat = await prisma.cat.findUnique({
+        where: { id: catId }
+      });
+  
+      if (!cat) {
+        return res.status(404).json({ message: 'Cat not found' });
       }
-    });
-
-    res.status(201).json(record);
-  } catch (error) {
-    console.error('Add health record error:', error);
-    res.status(500).json({ message: 'Failed to add health record' });
-  }
-});
+  
+      if (cat.ownerId !== req.user.userId) {
+        return res.status(403).json({ message: 'Not authorized to add records for this cat' });
+      }
+  
+      // Retrieve uploaded file URL from Cloudinary (if file is provided)
+      const fileUrl = req.file ? req.file.path : null;
+  
+      const record = await prisma.healthRecord.create({
+        data: {
+          type,
+          date: new Date(date),
+          description,
+          notes,
+          fileUrl, 
+          catId
+        }
+      });
+  
+      res.status(201).json(record);
+    } catch (error) {
+      console.error('Add health record error:', error);
+      res.status(500).json({ message: 'Failed to add health record' });
+    }
+  });
 
 // Get health records for a cat
 app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {

@@ -40,6 +40,7 @@ model HealthRecord {
   date        DateTime
   description String
   notes       String?
+  fileUrl     String?
   cat         Cat      @relation(fields: [catId], references: [id])
   catId       Int
   createdAt   DateTime @default(now())
