@@ -5,13 +5,12 @@ const jwt = require('jsonwebtoken');
 const bcryptjs = require('bcryptjs'); // Use bcryptjs for better compatibility
 const { PrismaClient } = require('@prisma/client');
 const path = require('path');
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const fs = require('fs');
 const multer = require('multer');
 
 // Initialize Prisma client with logging for easier debugging
 const prisma = new PrismaClient({
-  log: ['error', 'warn']
+  log: ['error', 'warn'],
 });
 
 // Test database connection
@@ -19,23 +18,30 @@ prisma.$connect()
   .then(() => console.log('Connected to database'))
   .catch((e) => console.error('Failed to connect to database:', e));
 
-// Configure Cloudinary using environment variables
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dx4mndj00',
-  api_key: process.env.CLOUDINARY_API_KEY || '237762943865176',
-  api_secret: process.env.CLOUDINARY_API_SECRET || '8r8SzjgfYkxgEOW5aXeq7l7x6TE'
-});
+const app = express();
 
-// Create Cloudinary storage, all uploaded files will be stored in the specified folder
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'cathealthtracker', // Change the folder name as needed
-    allowed_formats: ['jpg', 'jpeg', 'png']
+// Basic settings
+app.use(express.json());
+
+// Configure file upload using disk storage
+// (For cat images and record file uploads; adjust as needed)
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Ensure uploads directory exists
+    const uploadDir = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'file-' + uniqueSuffix + ext);
   }
 });
 
-// Initialize multer with Cloudinary storage, also configure file size limit and file filter
 const upload = multer({ 
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -44,11 +50,6 @@ const upload = multer({
     cb(null, true);
   }
 });
-
-const app = express();
-
-// Basic settings
-app.use(express.json());
 
 // CORS configuration to allow requests from specific origins
 app.use(cors({
@@ -74,6 +75,7 @@ app.get('/', (req, res) => {
 
 // Middleware: Verify JWT token
 const authenticateToken = (req, res, next) => {
+  // Skip authentication for OPTIONS requests
   if (req.method === 'OPTIONS') {
     return next();
   }
@@ -222,11 +224,12 @@ app.get('/api/cats/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Create a cat with image upload via Cloudinary
+// Create a cat with image upload via Cloudinary (or disk storage)
 app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res) => {
   try {
     const { name, breed, age, weight } = req.body;
-    // Use Cloudinary uploaded URL
+    
+    // Get uploaded image URL (if any)
     const imageUrl = req.file ? req.file.path : null;
 
     const cat = await prisma.cat.create({
@@ -266,7 +269,7 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
       return res.status(403).json({ message: 'Not authorized to modify this cat' });
     }
 
-    // If a new image is uploaded, use the Cloudinary URL returned
+    // If a new image is uploaded, use the returned file path from multer
     let imageUrl = existingCat.imageUrl;
     if (req.file) {
       imageUrl = req.file.path;
@@ -290,45 +293,45 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
   }
 });
 
-// Add a health record for a cat
+// Add a health record for a cat, with file upload support
 app.post('/api/cats/:catId/records', authenticateToken, upload.single('file'), async (req, res) => {
-    try {
-      const { type, date, description, notes } = req.body;
-      const catId = parseInt(req.params.catId);
-  
-      // Check if the cat exists and belongs to current user
-      const cat = await prisma.cat.findUnique({
-        where: { id: catId }
-      });
-  
-      if (!cat) {
-        return res.status(404).json({ message: 'Cat not found' });
-      }
-  
-      if (cat.ownerId !== req.user.userId) {
-        return res.status(403).json({ message: 'Not authorized to add records for this cat' });
-      }
-  
-      // Retrieve uploaded file URL from Cloudinary (if file is provided)
-      const fileUrl = req.file ? req.file.path : null;
-  
-      const record = await prisma.healthRecord.create({
-        data: {
-          type,
-          date: new Date(date),
-          description,
-          notes,
-          fileUrl, 
-          catId
-        }
-      });
-  
-      res.status(201).json(record);
-    } catch (error) {
-      console.error('Add health record error:', error);
-      res.status(500).json({ message: 'Failed to add health record' });
+  try {
+    const { type, date, description, notes } = req.body;
+    const catId = parseInt(req.params.catId);
+
+    // Check if the cat exists and belongs to current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
     }
-  });
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to add records for this cat' });
+    }
+
+    // Retrieve uploaded file URL from file upload, if provided
+    const fileUrl = req.file ? req.file.path : null;
+
+    const record = await prisma.healthRecord.create({
+      data: {
+        type,
+        date: new Date(date),
+        description,
+        notes,
+        fileUrl,  // Save file URL if file uploaded
+        catId
+      }
+    });
+
+    res.status(201).json(record);
+  } catch (error) {
+    console.error('Add health record error:', error);
+    res.status(500).json({ message: 'Failed to add health record' });
+  }
+});
 
 // Get health records for a cat
 app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {
@@ -360,81 +363,77 @@ app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {
   }
 });
 
-// Update a health record, with optional file upload support
-app.put('/api/records/:id', authenticateToken, upload.single('file'), async (req, res) => {
-    try {
-      const { type, date, description, notes } = req.body;
-      const recordId = parseInt(req.params.id);
-  
-      // Retrieve the existing record along with the associated cat
-      const record = await prisma.healthRecord.findUnique({
-        where: { id: recordId },
-        include: { cat: true }
-      });
-  
-      if (!record) {
-        return res.status(404).json({ message: 'Health record not found' });
-      }
-  
-      // Verify that the record belongs to the authenticated user
-      if (record.cat.ownerId !== req.user.userId) {
-        return res.status(403).json({ message: 'Not authorized to modify this record' });
-      }
-  
-      // If a new file is uploaded, update fileUrl; otherwise, keep the existing fileUrl
-      let fileUrl = record.fileUrl;
-      if (req.file) {
-        fileUrl = req.file.path;
-      }
-  
-      // Update the record in the database
-      const updatedRecord = await prisma.healthRecord.update({
-        where: { id: recordId },
-        data: {
-          type,
-          date: new Date(date),
-          description,
-          notes,
-          fileUrl  // Update fileUrl with new file URL if exists
-        }
-      });
-  
-      res.json(updatedRecord);
-    } catch (error) {
-      console.error('Update health record error:', error);
-      res.status(500).json({ message: 'Failed to update health record' });
-    }
-  });
-
-// GET a single health record by ID
+// GET a single health record by ID (for editing)
 app.get('/api/records/:id', authenticateToken, async (req, res) => {
-    try {
-      // Parse the record id from the URL parameters
-      const recordId = parseInt(req.params.id);
-      
-      // Retrieve the health record and include the associated cat data
-      const record = await prisma.healthRecord.findUnique({
-        where: { id: recordId },
-        include: { cat: true }
-      });
-      
-      // If no record is found, return 404
-      if (!record) {
-        return res.status(404).json({ message: 'Health record not found' });
-      }
-      
-      // Check if the record belongs to the authenticated user
-      if (record.cat.ownerId !== req.user.userId) {
-        return res.status(403).json({ message: 'Not authorized to view this record' });
-      }
-      
-      // Return the record data as JSON
-      res.json(record);
-    } catch (error) {
-      console.error('Error fetching health record:', error);
-      res.status(500).json({ message: 'Server error while fetching record' });
+  try {
+    const recordId = parseInt(req.params.id);
+    
+    // Retrieve the health record with the associated cat data
+    const record = await prisma.healthRecord.findUnique({
+      where: { id: recordId },
+      include: { cat: true }
+    });
+    
+    if (!record) {
+      return res.status(404).json({ message: 'Health record not found' });
     }
-  });  
+    
+    // Verify that the record belongs to the authenticated user
+    if (record.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to view this record' });
+    }
+    
+    res.json(record);
+  } catch (error) {
+    console.error('Error fetching health record:', error);
+    res.status(500).json({ message: 'Server error while fetching record' });
+  }
+});
+
+// Update a health record with file upload support
+app.put('/api/records/:id', authenticateToken, upload.single('file'), async (req, res) => {
+  try {
+    const { type, date, description, notes } = req.body;
+    const recordId = parseInt(req.params.id);
+
+    // Retrieve the existing record along with the associated cat
+    const record = await prisma.healthRecord.findUnique({
+      where: { id: recordId },
+      include: { cat: true }
+    });
+
+    if (!record) {
+      return res.status(404).json({ message: 'Health record not found' });
+    }
+
+    // Verify that the record belongs to the authenticated user
+    if (record.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to modify this record' });
+    }
+
+    // If a new file is uploaded, update fileUrl; otherwise, retain the existing fileUrl
+    let fileUrl = record.fileUrl;
+    if (req.file) {
+      fileUrl = req.file.path;
+    }
+
+    const updatedRecord = await prisma.healthRecord.update({
+      where: { id: recordId },
+      data: {
+        type,
+        date: new Date(date),
+        description,
+        notes,
+        fileUrl
+      }
+    });
+
+    res.json(updatedRecord);
+  } catch (error) {
+    console.error('Update health record error:', error);
+    res.status(500).json({ message: 'Failed to update health record' });
+  }
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
