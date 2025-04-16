@@ -118,7 +118,7 @@ function CatDetailsPage() {
               {cat.imageUrl && (
                 <div className="cat-photo-container mb-3">
                   <img 
-                    src={`${API_ENDPOINTS.BASE_URL}${cat.imageUrl}`} 
+                    src={cat.imageUrl} 
                     alt={cat.name} 
                     className="cat-photo"
                   />

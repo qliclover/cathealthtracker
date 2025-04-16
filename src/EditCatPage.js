@@ -44,7 +44,7 @@ function EditCatPage() {
 
         // If cat has an image, set it as current image
         if (data.imageUrl) {
-          setCurrentImageUrl(`${API_ENDPOINTS.BASE_URL}${data.imageUrl}`);
+          setCurrentImageUrl(data.imageUrl);
         }
       } catch (err) {
         setError(err.message);
