@@ -9,6 +9,7 @@ function CatDetailsPage() {
   // State for storing cat info and health records
   const [cat, setCat] = useState(null);
   const [records, setRecords] = useState([]);
+  const [insurance, setInsurance] = useState([]);
   
   // State for keeping track of which records are expanded (record id as key)
   const [expandedRecords, setExpandedRecords] = useState({});
@@ -30,7 +31,7 @@ function CatDetailsPage() {
     }));
   };
 
-  // Fetch cat info and health records
+  // Fetch cat info, health records, and insurance data
   useEffect(() => {
     const fetchCatDetails = async () => {
       try {
@@ -69,6 +70,17 @@ function CatDetailsPage() {
         const recordsData = await recordsResponse.json();
         // Ensure records is always an array
         setRecords(Array.isArray(recordsData) ? recordsData : []);
+        
+        // Fetch insurance information for the cat
+        const insuranceResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/insurance`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (insuranceResponse.ok) {
+          const insuranceData = await insuranceResponse.json();
+          setInsurance(Array.isArray(insuranceData) ? insuranceData : []);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -90,6 +102,21 @@ function CatDetailsPage() {
 
   const handleEditRecord = (recordId) => {
     navigate(`/records/${recordId}/edit`);
+  };
+  
+  const handleAddInsurance = () => {
+    navigate(`/cats/${id}/insurance/add`);
+  };
+  
+  const handleEditInsurance = (insuranceId) => {
+    navigate(`/insurance/${insuranceId}/edit`);
+  };
+
+  // Check if insurance is active
+  const isInsuranceActive = (policy) => {
+    const today = new Date();
+    const endDate = new Date(policy.endDate);
+    return endDate >= today;
   };
 
   if (loading) {
@@ -154,6 +181,63 @@ function CatDetailsPage() {
               {cat.description && (
                 <div className="mb-3">
                   <strong>Description:</strong> {cat.description}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Insurance Information */}
+          <div className="card mb-4">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h3>Insurance</h3>
+                <button className="btn btn-primary" onClick={handleAddInsurance}>
+                  <i className="bi bi-shield-plus me-2"></i>
+                  Add Insurance
+                </button>
+              </div>
+
+              {insurance.length === 0 ? (
+                <p className="text-muted">No insurance information available</p>
+              ) : (
+                <div className="list-group">
+                  {insurance.map((policy) => (
+                    <div key={policy.id} className="list-group-item">
+                      <div className="d-flex justify-content-between align-items-start">
+                        <div>
+                          <div className="d-flex align-items-center mb-1">
+                            <h5 className="mb-0">{policy.provider}</h5>
+                            <span className={`badge ms-2 ${isInsuranceActive(policy) ? 'bg-success' : 'bg-danger'}`}>
+                              {isInsuranceActive(policy) ? 'Active' : 'Expired'}
+                            </span>
+                          </div>
+                          <p className="mb-1">
+                            <strong>Policy:</strong> {policy.policyNumber}
+                          </p>
+                          <p className="mb-1">
+                            <strong>Coverage Period:</strong> {new Date(policy.startDate).toLocaleDateString()} to {new Date(policy.endDate).toLocaleDateString()}
+                          </p>
+                          {policy.premium && (
+                            <p className="mb-1">
+                              <strong>Premium:</strong> ${policy.premium.toFixed(2)}
+                            </p>
+                          )}
+                          {policy.coverage && (
+                            <p className="mb-1">
+                              <strong>Coverage:</strong> {policy.coverage}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={() => handleEditInsurance(policy.id)}
+                        >
+                          <i className="bi bi-pencil me-1"></i>
+                          Edit
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

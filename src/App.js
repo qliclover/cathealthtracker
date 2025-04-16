@@ -11,6 +11,8 @@ import AddRecordPage from './AddRecordPage';
 import EditRecordPage from './EditRecordPage';
 import HealthCalendarPage from './HealthCalendarPage';
 import HealthTodoListPage from './HealthTodoListPage';
+import AddInsurancePage from './AddInsurancePage';
+import EditInsurancePage from './EditInsurancePage';
 import './styles/index.css'; // Import the styles
 
 // Protected route component
@@ -106,6 +108,18 @@ function App() {
           <Route path="/todos" element={
             <ProtectedRoute>
               <HealthTodoListPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/cats/:id/insurance/add" element={
+            <ProtectedRoute>
+              <AddInsurancePage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/insurance/:id/edit" element={
+            <ProtectedRoute>
+              <EditInsurancePage />
             </ProtectedRoute>
           } />
           

@@ -419,6 +419,143 @@ app.put('/api/records/:id', authenticateToken, upload.single('file'), async (req
   }
 });
 
+// Get all insurance information for a cat
+app.get('/api/cats/:catId/insurance', authenticateToken, async (req, res) => {
+  try {
+    const catId = parseInt(req.params.catId);
+
+    // Check if the cat exists and belongs to the current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to view insurance for this cat' });
+    }
+
+    const insurance = await prisma.insurance.findMany({
+      where: { catId },
+      orderBy: { startDate: 'desc' }
+    });
+
+    res.json(insurance);
+  } catch (error) {
+    console.error('Get insurance error:', error);
+    res.status(500).json({ message: 'Failed to get insurance information' });
+  }
+});
+
+// Add insurance information for a cat
+app.post('/api/cats/:catId/insurance', authenticateToken, async (req, res) => {
+  try {
+    const { provider, policyNumber, startDate, endDate, coverage, premium } = req.body;
+    const catId = parseInt(req.params.catId);
+
+    // Check if the cat exists and belongs to the current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to add insurance for this cat' });
+    }
+
+    const insurance = await prisma.insurance.create({
+      data: {
+        provider,
+        policyNumber,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        coverage,
+        premium: premium ? parseFloat(premium) : null,
+        catId
+      }
+    });
+
+    res.status(201).json(insurance);
+  } catch (error) {
+    console.error('Add insurance error:', error);
+    res.status(500).json({ message: 'Failed to add insurance information' });
+  }
+});
+
+// Update insurance information
+app.put('/api/insurance/:id', authenticateToken, async (req, res) => {
+  try {
+    const { provider, policyNumber, startDate, endDate, coverage, premium } = req.body;
+    const insuranceId = parseInt(req.params.id);
+
+    // Check if the insurance exists and belongs to a cat owned by the current user
+    const insurance = await prisma.insurance.findUnique({
+      where: { id: insuranceId },
+      include: { cat: true }
+    });
+
+    if (!insurance) {
+      return res.status(404).json({ message: 'Insurance information not found' });
+    }
+
+    if (insurance.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to modify this insurance information' });
+    }
+
+    const updatedInsurance = await prisma.insurance.update({
+      where: { id: insuranceId },
+      data: {
+        provider,
+        policyNumber,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        coverage,
+        premium: premium ? parseFloat(premium) : null
+      }
+    });
+
+    res.json(updatedInsurance);
+  } catch (error) {
+    console.error('Update insurance error:', error);
+    res.status(500).json({ message: 'Failed to update insurance information' });
+  }
+});
+
+// Delete insurance information
+app.delete('/api/insurance/:id', authenticateToken, async (req, res) => {
+  try {
+    const insuranceId = parseInt(req.params.id);
+
+    // Check if the insurance exists and belongs to a cat owned by the current user
+    const insurance = await prisma.insurance.findUnique({
+      where: { id: insuranceId },
+      include: { cat: true }
+    });
+
+    if (!insurance) {
+      return res.status(404).json({ message: 'Insurance information not found' });
+    }
+
+    if (insurance.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to delete this insurance information' });
+    }
+
+    await prisma.insurance.delete({
+      where: { id: insuranceId }
+    });
+
+    res.json({ message: 'Insurance information deleted successfully' });
+  } catch (error) {
+    console.error('Delete insurance error:', error);
+    res.status(500).json({ message: 'Failed to delete insurance information' });
+  }
+});
+
 // Enhanced error handling middleware with CORS headers
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
