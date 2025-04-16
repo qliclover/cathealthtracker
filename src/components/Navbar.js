@@ -37,14 +37,21 @@ function Navbar() {
             {isLoggedIn ? (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/cats">My Cats</Link>
+                  <Link className="nav-link" to="/cats">
+                    <i className="bi bi-house-door me-1"></i>My Cats
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/calendar">
+                    <i className="bi bi-calendar-week me-1"></i>Health Calendar
+                  </Link>
                 </li>
                 <li className="nav-item">
                   <button 
                     className="nav-link btn btn-link" 
                     onClick={handleLogout}
                   >
-                    Logout
+                    <i className="bi bi-box-arrow-right me-1"></i>Logout
                   </button>
                 </li>
               </>

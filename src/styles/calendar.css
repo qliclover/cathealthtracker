@@ -1,0 +1,40 @@
+/* Calendar styling */
+.rbc-calendar {
+    border-radius: 15px;
+    font-family: 'Nunito', sans-serif;
+  }
+  
+  .rbc-event {
+    background-color: #FF6B98 !important;
+    border-radius: 8px;
+    padding: 2px 5px;
+  }
+  
+  .rbc-event:hover {
+    background-color: #9C27B0 !important;
+  }
+  
+  .rbc-today {
+    background-color: #FCE4EC;
+  }
+  
+  .rbc-header {
+    padding: 10px;
+    font-weight: 600;
+    color: #9C27B0;
+  }
+  
+  .rbc-toolbar button {
+    border-radius: 50px;
+  }
+  
+  .rbc-toolbar button.rbc-active {
+    background-color: #FF6B98;
+    border-color: #FF6B98;
+  }
+  
+  .rbc-toolbar-label {
+    font-weight: 700;
+    font-size: 1.2em;
+    color: #9C27B0;
+  }
