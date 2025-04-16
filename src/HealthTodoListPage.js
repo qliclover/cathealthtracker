@@ -99,12 +99,30 @@ function HealthTodoListPage() {
     );
   };
 
-  const handleCreateRecord = todo => {
-    navigate(
-      `/cats/${todo.catId}/records/add?type=${todo.type}&title=${encodeURIComponent(
-        todo.title
-      )}`
-    );
+  const handleCreateRecord = (todo) => {
+    // Guard: make sure we have all needed fields
+    if (
+      !todo ||
+      typeof todo.catId === 'undefined' ||
+      typeof todo.type !== 'string' ||
+      typeof todo.title !== 'string'
+    ) {
+      console.warn('Cannot navigate, missing or invalid todo data:', todo);
+      return;
+    }
+  
+    // Encode the title for use in a URL
+    const encodedTitle = encodeURIComponent(todo.title);
+  
+    // Build the target path
+    const path = `/cats/${todo.catId}/records/add?type=${todo.type}&title=${encodedTitle}`;
+  
+    // Perform navigation, catching any errors
+    try {
+      navigate(path);
+    } catch (err) {
+      console.error('Navigation failed to', path, err);
+    }
   };
 
   const getTypeBadgeClass = type => {
