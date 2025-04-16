@@ -15,6 +15,7 @@ function HealthTodoListPage() {
   const [cats, setCats] = useState([]);
   const navigate = useNavigate();
 
+  // Fetch cats and generate default todo tasks
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -24,6 +25,7 @@ function HealthTodoListPage() {
           return;
         }
 
+        // Get all cats owned by the user
         const catsResponse = await fetch(API_ENDPOINTS.GET_CATS, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -31,8 +33,10 @@ function HealthTodoListPage() {
         const catsData = await catsResponse.json();
         setCats(catsData);
 
+        // Create default health reminder tasks for each cat
         const defaultTodos = [];
         catsData.forEach(cat => {
+          // Vaccination reminder
           defaultTodos.push({
             id: `vaccine-${cat.id}`,
             title: `Annual vaccination for ${cat.name}`,
@@ -42,6 +46,8 @@ function HealthTodoListPage() {
             catName: cat.name,
             type: 'vaccination'
           });
+          
+          // Checkup reminder
           defaultTodos.push({
             id: `checkup-${cat.id}`,
             title: `Regular checkup for ${cat.name}`,
@@ -63,18 +69,21 @@ function HealthTodoListPage() {
     fetchData();
   }, [navigate]);
 
+  // Calculate date one year from now
   const getNextAnnualDate = () => {
     const date = new Date();
     date.setFullYear(date.getFullYear() + 1);
     return date.toISOString().split('T')[0];
   };
 
+  // Calculate date three months from now
   const getNextQuarterlyDate = () => {
     const date = new Date();
     date.setMonth(date.getMonth() + 3);
     return date.toISOString().split('T')[0];
   };
 
+  // Handle adding a new task
   const handleAddTodo = () => {
     if (!newTodo.title || !newTodo.dueDate || !newTodo.catId) return;
     const cat = cats.find(c => c.id === parseInt(newTodo.catId));
@@ -91,6 +100,7 @@ function HealthTodoListPage() {
     setNewTodo({ title: '', dueDate: '', catId: '', type: 'vaccination' });
   };
 
+  // Toggle task completion status
   const handleToggleComplete = id => {
     setTodos(
       todos.map(todo =>
@@ -99,6 +109,7 @@ function HealthTodoListPage() {
     );
   };
 
+  // Navigate to create a health record from a task
   const handleCreateRecord = (todo) => {
     // Guard: make sure we have all needed fields
     if (
@@ -125,6 +136,7 @@ function HealthTodoListPage() {
     }
   };
 
+  // Get appropriate badge color based on task type
   const getTypeBadgeClass = type => {
     switch (type) {
       case 'vaccination': return 'bg-primary';
@@ -136,6 +148,7 @@ function HealthTodoListPage() {
     }
   };
 
+  // Sort tasks by due date and filter upcoming tasks (next 30 days)
   const sortedTodos = [...todos].sort(
     (a, b) => new Date(a.dueDate) - new Date(b.dueDate)
   );
@@ -167,7 +180,7 @@ function HealthTodoListPage() {
     <div className="container mt-4">
       <h2 className="mb-4">Health Tasks</h2>
 
-      {/* link to the .ics calendar endpoint */}
+      {/* Calendar subscription link - fixed to use the correct API_ENDPOINTS.BASE_URL */}
       <div className="mb-4">
         <a
           href={`${API_ENDPOINTS.BASE_URL}/api/calendar.ics?token=${localStorage.getItem('token')}`}
@@ -175,8 +188,12 @@ function HealthTodoListPage() {
           rel="noreferrer"
           className="btn btn-outline-primary"
         >
-          📅 Subscribe to Health Reminders Calendar
+          <i className="bi bi-calendar-plus me-2"></i>
+          Subscribe to Health Reminders Calendar
         </a>
+        <small className="text-muted d-block mt-1">
+          Add these reminders to your personal calendar app
+        </small>
       </div>
 
       {upcoming.length > 0 && (

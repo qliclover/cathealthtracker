@@ -13,6 +13,8 @@
       }
     ],
     "env": {
-      "NODE_ENV": "production"
+      "NODE_ENV": "production",
+      "APP_DOMAIN": "cathealthtracker.vercel.app", 
+      "TIMEZONE": "America/Los_Angeles"
     }
   }
