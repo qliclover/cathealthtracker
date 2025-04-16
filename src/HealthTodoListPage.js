@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_ENDPOINTS } from './config';
+import { API_ENDPOINTS, BASE_URL } from './config';
 
 function HealthTodoListPage() {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  // Initialize newTodo state with default type 'vaccination'
   const [newTodo, setNewTodo] = useState({
     title: '',
     dueDate: '',
@@ -25,7 +24,6 @@ function HealthTodoListPage() {
           return;
         }
 
-        // Fetch list of cats
         const catsResponse = await fetch(API_ENDPOINTS.GET_CATS, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -33,10 +31,8 @@ function HealthTodoListPage() {
         const catsData = await catsResponse.json();
         setCats(catsData);
 
-        // Generate default reminders for each cat
         const defaultTodos = [];
         catsData.forEach(cat => {
-          // Annual vaccination reminder
           defaultTodos.push({
             id: `vaccine-${cat.id}`,
             title: `Annual vaccination for ${cat.name}`,
@@ -46,7 +42,6 @@ function HealthTodoListPage() {
             catName: cat.name,
             type: 'vaccination'
           });
-          // Quarterly checkup reminder
           defaultTodos.push({
             id: `checkup-${cat.id}`,
             title: `Regular checkup for ${cat.name}`,
@@ -68,21 +63,18 @@ function HealthTodoListPage() {
     fetchData();
   }, [navigate]);
 
-  // Calculate next annual date
   const getNextAnnualDate = () => {
     const date = new Date();
     date.setFullYear(date.getFullYear() + 1);
     return date.toISOString().split('T')[0];
   };
 
-  // Calculate next quarterly date
   const getNextQuarterlyDate = () => {
     const date = new Date();
     date.setMonth(date.getMonth() + 3);
     return date.toISOString().split('T')[0];
   };
 
-  // Add a new todo task
   const handleAddTodo = () => {
     if (!newTodo.title || !newTodo.dueDate || !newTodo.catId) return;
     const cat = cats.find(c => c.id === parseInt(newTodo.catId));
@@ -93,13 +85,12 @@ function HealthTodoListPage() {
       dueDate: newTodo.dueDate,
       catId: parseInt(newTodo.catId),
       catName: cat.name,
-      type: newTodo.type // Use selected type
+      type: newTodo.type
     };
     setTodos([...todos, newTask]);
     setNewTodo({ title: '', dueDate: '', catId: '', type: 'vaccination' });
   };
 
-  // Toggle completion status of a task
   const handleToggleComplete = id => {
     setTodos(
       todos.map(todo =>
@@ -108,7 +99,6 @@ function HealthTodoListPage() {
     );
   };
 
-  // Navigate to add record page with prefilled params
   const handleCreateRecord = todo => {
     navigate(
       `/cats/${todo.catId}/records/add?type=${todo.type}&title=${encodeURIComponent(
@@ -117,29 +107,20 @@ function HealthTodoListPage() {
     );
   };
 
-  // Return a badge class based on task type
   const getTypeBadgeClass = type => {
     switch (type) {
-      case 'vaccination':
-        return 'bg-primary';
-      case 'checkup':
-        return 'bg-info';
-      case 'followup':
-        return 'bg-secondary';
-      case 'medication':
-        return 'bg-warning';
-      case 'grooming':
-        return 'bg-success';
-      default:
-        return 'bg-dark';
+      case 'vaccination': return 'bg-primary';
+      case 'checkup':     return 'bg-info';
+      case 'followup':    return 'bg-secondary';
+      case 'medication':  return 'bg-warning';
+      case 'grooming':    return 'bg-success';
+      default:            return 'bg-dark';
     }
   };
 
-  // Sort tasks by due date
   const sortedTodos = [...todos].sort(
     (a, b) => new Date(a.dueDate) - new Date(b.dueDate)
   );
-  // Filter upcoming tasks within 30 days
   const upcoming = sortedTodos.filter(
     todo =>
       !todo.completed &&
@@ -168,7 +149,18 @@ function HealthTodoListPage() {
     <div className="container mt-4">
       <h2 className="mb-4">Health Tasks</h2>
 
-      {/* Upcoming tasks */}
+      {/* link to the .ics calendar endpoint */}
+      <div className="mb-4">
+        <a
+          href={`${BASE_URL}/api/calendar.ics`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-outline-primary"
+        >
+          📅 Subscribe to Health Reminders Calendar
+        </a>
+      </div>
+
       {upcoming.length > 0 && (
         <div className="card mb-4 border-warning">
           <div className="card-header bg-warning text-white">
@@ -179,7 +171,6 @@ function HealthTodoListPage() {
               {upcoming.map(todo => (
                 <div key={todo.id} className="list-group-item d-flex justify-content-between align-items-center">
                   <div>
-                    {/* Display type badge */}
                     <span className={`badge ${getTypeBadgeClass(todo.type)} me-2`}>
                       {todo.type.charAt(0).toUpperCase() + todo.type.slice(1)}
                     </span>
@@ -205,7 +196,6 @@ function HealthTodoListPage() {
         </div>
       )}
 
-      {/* Add New Task Form */}
       <div className="card mb-4">
         <div className="card-header">
           <h4 className="mb-0">Add New Task</h4>
@@ -220,13 +210,10 @@ function HealthTodoListPage() {
               >
                 <option value="">Select Cat</option>
                 {cats.map(cat => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
             </div>
-            {/* Task type selector */}
             <div className="col-md-2">
               <select
                 className="form-select"
@@ -267,7 +254,6 @@ function HealthTodoListPage() {
         </div>
       </div>
 
-      {/* All tasks list */}
       <div className="card">
         <div className="card-header">
           <h4 className="mb-0">All Tasks</h4>
@@ -284,7 +270,6 @@ function HealthTodoListPage() {
                 }`}
               >
                 <div className={todo.completed ? 'text-decoration-line-through' : ''}>
-                  {/* Display type badge */}
                   <span className={`badge ${getTypeBadgeClass(todo.type)} me-2`}>
                     {todo.type.charAt(0).toUpperCase() + todo.type.slice(1)}
                   </span>
