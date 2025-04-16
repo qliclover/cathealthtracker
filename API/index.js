@@ -360,42 +360,51 @@ app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {
   }
 });
 
-// Update a health record
-app.put('/api/records/:id', authenticateToken, async (req, res) => {
-  try {
-    const { type, date, description, notes } = req.body;
-    const recordId = parseInt(req.params.id);
-
-    // Find the record and include associated cat
-    const record = await prisma.healthRecord.findUnique({
-      where: { id: recordId },
-      include: { cat: true }
-    });
-
-    if (!record) {
-      return res.status(404).json({ message: 'Health record not found' });
-    }
-
-    if (record.cat.ownerId !== req.user.userId) {
-      return res.status(403).json({ message: 'Not authorized to modify this record' });
-    }
-
-    const updatedRecord = await prisma.healthRecord.update({
-      where: { id: recordId },
-      data: {
-        type,
-        date: new Date(date),
-        description,
-        notes
+// Update a health record, with optional file upload support
+app.put('/api/records/:id', authenticateToken, upload.single('file'), async (req, res) => {
+    try {
+      const { type, date, description, notes } = req.body;
+      const recordId = parseInt(req.params.id);
+  
+      // Retrieve the existing record along with the associated cat
+      const record = await prisma.healthRecord.findUnique({
+        where: { id: recordId },
+        include: { cat: true }
+      });
+  
+      if (!record) {
+        return res.status(404).json({ message: 'Health record not found' });
       }
-    });
-
-    res.json(updatedRecord);
-  } catch (error) {
-    console.error('Update health record error:', error);
-    res.status(500).json({ message: 'Failed to update health record' });
-  }
-});
+  
+      // Verify that the record belongs to the authenticated user
+      if (record.cat.ownerId !== req.user.userId) {
+        return res.status(403).json({ message: 'Not authorized to modify this record' });
+      }
+  
+      // If a new file is uploaded, update fileUrl; otherwise, keep the existing fileUrl
+      let fileUrl = record.fileUrl;
+      if (req.file) {
+        fileUrl = req.file.path;
+      }
+  
+      // Update the record in the database
+      const updatedRecord = await prisma.healthRecord.update({
+        where: { id: recordId },
+        data: {
+          type,
+          date: new Date(date),
+          description,
+          notes,
+          fileUrl  // Update fileUrl with new file URL if exists
+        }
+      });
+  
+      res.json(updatedRecord);
+    } catch (error) {
+      console.error('Update health record error:', error);
+      res.status(500).json({ message: 'Failed to update health record' });
+    }
+  });
 
 // GET a single health record by ID
 app.get('/api/records/:id', authenticateToken, async (req, res) => {

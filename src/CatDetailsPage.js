@@ -39,6 +39,7 @@ function CatDetailsPage() {
           navigate('/login');
           return;
         }
+        
         // Fetch cat basic information
         const catResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}`, {
           headers: {
@@ -66,6 +67,7 @@ function CatDetailsPage() {
           throw new Error('Failed to fetch health records');
         }
         const recordsData = await recordsResponse.json();
+        // Ensure records is always an array
         setRecords(Array.isArray(recordsData) ? recordsData : []);
       } catch (err) {
         setError(err.message);
@@ -196,9 +198,10 @@ function CatDetailsPage() {
                           </p>
                           {/* Display record description with expand/collapse functionality */}
                           <p className="mb-1">
-                            {record.description && (expandedRecords[record.id] 
-                              ? record.description 
-                              : truncate(record.description, 100)
+                            {record.description && (
+                              expandedRecords[record.id]
+                                ? record.description
+                                : truncate(record.description, 100)
                             )}
                             {record.description && record.description.length > 100 && (
                               <button
