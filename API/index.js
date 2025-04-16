@@ -645,6 +645,8 @@ app.get('/api/calendar.ics', authenticateToken, async (req, res) => {
   cal.serve(res);
 });
 
+// ignore favicon requests
+app.get('/favicon.ico', (req, res) => res.sendStatus(204));
 // Catch-all route for undefined endpoints
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Endpoint not found' });
