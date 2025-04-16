@@ -147,7 +147,7 @@
   /* Cat photo container */
   .cat-photo-container {
     width: 100%;
-    max-width: 300px;
+    max-width: 600px;
     aspect-ratio: 3 / 2;
     overflow: hidden;
     border-radius: 15px;
