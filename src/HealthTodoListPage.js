@@ -6,7 +6,12 @@ function HealthTodoListPage() {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [newTodo, setNewTodo] = useState({ title: '', dueDate: '', catId: '' });
+  const [newTodo, setNewTodo] = useState({ 
+    title: '', 
+    dueDate: '', 
+    catId: '',
+    type: 'vaccination' // Default type
+  });
   const [cats, setCats] = useState([]);
   const navigate = useNavigate();
 
@@ -99,11 +104,16 @@ function HealthTodoListPage() {
       dueDate: newTodo.dueDate,
       catId: parseInt(newTodo.catId),
       catName: cat.name,
-      type: 'other'
+      type: newTodo.type
     };
     
     setTodos([...todos, newTask]);
-    setNewTodo({ title: '', dueDate: '', catId: '' });
+    setNewTodo({ 
+      title: '', 
+      dueDate: '', 
+      catId: '',
+      type: 'vaccination' 
+    });
   };
 
   // Toggle todo completion status
@@ -117,6 +127,18 @@ function HealthTodoListPage() {
   const handleCreateRecord = (todo) => {
     // Navigate to add record page with prefilled fields
     navigate(`/cats/${todo.catId}/records/add?type=${todo.type}&title=${encodeURIComponent(todo.title)}`);
+  };
+
+  // Get type badge class
+  const getTypeBadgeClass = (type) => {
+    switch(type) {
+      case 'vaccination': return 'bg-primary';
+      case 'checkup': return 'bg-info';
+      case 'followup': return 'bg-secondary';
+      case 'medication': return 'bg-warning';
+      case 'grooming': return 'bg-success';
+      default: return 'bg-secondary';
+    }
   };
 
   // Sort todos by due date
@@ -163,7 +185,12 @@ function HealthTodoListPage() {
                 <div key={todo.id} className="list-group-item list-group-item-action">
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
-                      <h5 className="mb-1">{todo.title}</h5>
+                      <h5 className="mb-1">
+                        <span className={`badge ${getTypeBadgeClass(todo.type)} me-2`}>
+                          {todo.type.charAt(0).toUpperCase() + todo.type.slice(1)}
+                        </span>
+                        {todo.title}
+                      </h5>
                       <small className="text-muted">
                         <i className="bi bi-calendar3 me-1"></i>
                         Due: {new Date(todo.dueDate).toLocaleDateString()}
@@ -198,7 +225,7 @@ function HealthTodoListPage() {
         </div>
         <div className="card-body">
           <div className="row g-3">
-            <div className="col-md-4">
+            <div className="col-md-3">
               <select 
                 className="form-select" 
                 value={newTodo.catId}
@@ -210,7 +237,21 @@ function HealthTodoListPage() {
                 ))}
               </select>
             </div>
-            <div className="col-md-4">
+            <div className="col-md-3">
+              <select
+                className="form-select"
+                value={newTodo.type}
+                onChange={(e) => setNewTodo({...newTodo, type: e.target.value})}
+              >
+                <option value="vaccination">Vaccination</option>
+                <option value="checkup">Check-up</option>
+                <option value="followup">Follow-up</option>
+                <option value="medication">Medication</option>
+                <option value="grooming">Grooming</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div className="col-md-3">
               <input 
                 type="text" 
                 className="form-control" 
@@ -227,12 +268,12 @@ function HealthTodoListPage() {
                 onChange={(e) => setNewTodo({...newTodo, dueDate: e.target.value})}
               />
             </div>
-            <div className="col-md-2">
+            <div className="col-md-1">
               <button 
                 className="btn btn-primary w-100"
                 onClick={handleAddTodo}
               >
-                Add Task
+                Add
               </button>
             </div>
           </div>
@@ -252,7 +293,12 @@ function HealthTodoListPage() {
                 <div key={todo.id} className={`list-group-item list-group-item-action ${todo.completed ? 'list-group-item-success' : ''}`}>
                   <div className="d-flex justify-content-between align-items-center">
                     <div className={todo.completed ? 'text-decoration-line-through' : ''}>
-                      <h5 className="mb-1">{todo.title}</h5>
+                      <h5 className="mb-1">
+                        <span className={`badge ${getTypeBadgeClass(todo.type)} me-2`}>
+                          {todo.type.charAt(0).toUpperCase() + todo.type.slice(1)}
+                        </span>
+                        {todo.title}
+                      </h5>
                       <small className="text-muted">
                         <i className="bi bi-calendar3 me-1"></i>
                         Due: {new Date(todo.dueDate).toLocaleDateString()}
