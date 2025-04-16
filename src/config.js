@@ -4,7 +4,7 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
   : 'http://localhost:3001/api';
 
 // Base URL for the API server (without /api path)
-const BASE_URL = process.env.NODE_ENV === 'production'
+export const BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://cathealthtracker-api.vercel.app'
   : 'http://localhost:3001';
 
