@@ -20,7 +20,7 @@ function CatDetailsPage() {
         }
 
         // Fetch cat information
-        const catResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}`, {
+        const catResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/records`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
