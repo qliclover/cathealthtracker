@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 const localizer = momentLocalizer(moment);
 
 function HealthCalendarPage() {
-  const [cats, setCats] = useState([]);
+  // const [cats, setCats] = useState([]);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -23,7 +23,6 @@ function HealthCalendarPage() {
           return;
         }
 
-        // 获取所有猫咪
         const catsResponse = await fetch(API_ENDPOINTS.GET_CATS, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -35,9 +34,7 @@ function HealthCalendarPage() {
         }
 
         const catsData = await catsResponse.json();
-        setCats(catsData);
 
-        // 获取所有猫咪的健康记录
         const allRecords = [];
         for (const cat of catsData) {
           const recordsResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${cat.id}/records`, {
@@ -70,7 +67,6 @@ function HealthCalendarPage() {
     fetchData();
   }, [navigate]);
 
-  // 将记录转换为日历事件格式
   const calendarEvents = records.map(record => ({
     id: record.id,
     title: `${record.catName} - ${record.type}`,
@@ -80,7 +76,6 @@ function HealthCalendarPage() {
     resource: record
   }));
 
-  // 处理事件点击
   const handleEventClick = (event) => {
     const record = event.resource;
     navigate(`/records/${record.id}/edit`);
