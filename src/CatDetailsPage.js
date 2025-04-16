@@ -19,8 +19,8 @@ function CatDetailsPage() {
           return;
         }
 
-        // Fetch cat information
-        const catResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/records`, {
+        // Fetch cat information using the correct endpoint
+        const catResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -38,8 +38,8 @@ function CatDetailsPage() {
         const catData = await catResponse.json();
         setCat(catData);
 
-        // Fetch health records
-        const recordsResponse = await fetch(`${API_ENDPOINTS.GET_CAT_RECORDS}/${id}`, {
+        // Fetch health records using the correct endpoint
+        const recordsResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/records`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
