@@ -397,6 +397,36 @@ app.put('/api/records/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// GET a single health record by ID
+app.get('/api/records/:id', authenticateToken, async (req, res) => {
+    try {
+      // Parse the record id from the URL parameters
+      const recordId = parseInt(req.params.id);
+      
+      // Retrieve the health record and include the associated cat data
+      const record = await prisma.healthRecord.findUnique({
+        where: { id: recordId },
+        include: { cat: true }
+      });
+      
+      // If no record is found, return 404
+      if (!record) {
+        return res.status(404).json({ message: 'Health record not found' });
+      }
+      
+      // Check if the record belongs to the authenticated user
+      if (record.cat.ownerId !== req.user.userId) {
+        return res.status(403).json({ message: 'Not authorized to view this record' });
+      }
+      
+      // Return the record data as JSON
+      res.json(record);
+    } catch (error) {
+      console.error('Error fetching health record:', error);
+      res.status(500).json({ message: 'Server error while fetching record' });
+    }
+  });  
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
