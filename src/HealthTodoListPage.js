@@ -152,9 +152,9 @@ function HealthTodoListPage() {
       {/* link to the .ics calendar endpoint */}
       <div className="mb-4">
         <a
-          href={`${BASE_URL}/api/calendar.ics`}
+          href={`${process.env.REACT_APP_API_URL.replace('/api','')}/api/calendar.ics?token=${localStorage.getItem('token')}`}
           target="_blank"
-          rel="noopener noreferrer"
+          rel="noreferrer"
           className="btn btn-outline-primary"
         >
           📅 Subscribe to Health Reminders Calendar

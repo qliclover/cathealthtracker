@@ -603,43 +603,58 @@ app.use((err, req, res, next) => {
 });
 
 // Calendar subscription endpoint
-app.get('/api/calendar.ics', authenticateToken, async (req, res) => {
-  // Fetch cats for the authenticated user
-  const cats = await prisma.cat.findMany({ where: { ownerId: req.user.userId } });
+app.get('/api/calendar.ics', async (req, res) => {
+  // Extract the JWT token from the query string
+  const token = req.query.token;
+  if (!token) {
+    return res.status(401).json({ message: 'Authentication token not provided' });
+  }
 
-  // Create iCal calendar
+  // Verify and decode the JWT
+  let payload;
+  try {
+    payload = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    return res.status(403).json({ message: 'Invalid authentication token' });
+  }
+
+  // Fetch all cats for the authenticated user
+  const cats = await prisma.cat.findMany({ where: { ownerId: payload.userId } });
+
+  // Create an iCal calendar
   const cal = ical({
     domain: process.env.APP_DOMAIN,
     name: 'Cat Health Reminders',
     timezone: process.env.TIMEZONE
   });
 
+  // Generate events for each cat
   const now = new Date();
   cats.forEach(cat => {
-    // Annual vaccination event
+    // Annual vaccination reminder
     const nextVaccine = new Date(now);
     nextVaccine.setFullYear(nextVaccine.getFullYear() + 1);
     cal.createEvent({
       start: nextVaccine,
       allDay: true,
-      id: `vaccine-${cat.id}@yourapp`,
+      id: `vaccine-${cat.id}@${process.env.APP_DOMAIN}`,
       summary: `Annual vaccination for ${cat.name}`,
       description: `Reminder: annual vaccination for ${cat.name}.`
     });
 
-    // Quarterly checkup event
+    // Quarterly checkup reminder
     const nextCheckup = new Date(now);
     nextCheckup.setMonth(nextCheckup.getMonth() + 3);
     cal.createEvent({
       start: nextCheckup,
       allDay: true,
-      id: `checkup-${cat.id}@yourapp`,
+      id: `checkup-${cat.id}@${process.env.APP_DOMAIN}`,
       summary: `Quarterly checkup for ${cat.name}`,
       description: `Reminder: quarterly checkup for ${cat.name}.`
     });
   });
 
-  // Send as .ics file
+  // Send the calendar as a .ics file
   res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="cat-health.ics"');
   cal.serve(res);
