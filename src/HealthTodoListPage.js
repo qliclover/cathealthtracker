@@ -170,7 +170,7 @@ function HealthTodoListPage() {
       {/* link to the .ics calendar endpoint */}
       <div className="mb-4">
         <a
-          href={`${process.env.REACT_APP_API_URL.replace('/api','')}/api/calendar.ics?token=${localStorage.getItem('token')}`}
+          href={`${API_ENDPOINTS.BASE_URL}/api/calendar.ics?token=${localStorage.getItem('token')}`}
           target="_blank"
           rel="noreferrer"
           className="btn btn-outline-primary"
