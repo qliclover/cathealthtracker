@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_ENDPOINTS, BASE_URL } from './config';
+import { API_ENDPOINTS } from './config';
 
 function HealthTodoListPage() {
   const [todos, setTodos] = useState([]);
