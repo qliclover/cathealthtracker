@@ -193,7 +193,10 @@ app.get('/api/cats/:id', authenticateToken, async (req, res) => {
   try {
     const cat = await prisma.cat.findUnique({
       where: { id: parseInt(req.params.id) },
-      include: { healthRecords: true }
+      include: { 
+        healthRecords: true,
+        insurance: true  // Include insurance data
+      }
     });
 
     if (!cat) {
@@ -484,6 +487,33 @@ app.post('/api/cats/:catId/insurance', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Add insurance error:', error);
     res.status(500).json({ message: 'Failed to add insurance information' });
+  }
+});
+
+// GET a single insurance record by ID
+app.get('/api/insurance/:id', authenticateToken, async (req, res) => {
+  try {
+    const insuranceId = parseInt(req.params.id);
+    
+    // Retrieve the insurance with associated cat data
+    const insurance = await prisma.insurance.findUnique({
+      where: { id: insuranceId },
+      include: { cat: true }
+    });
+    
+    if (!insurance) {
+      return res.status(404).json({ message: 'Insurance information not found' });
+    }
+    
+    // Verify that the insurance belongs to a cat owned by the authenticated user
+    if (insurance.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to view this insurance information' });
+    }
+    
+    res.json(insurance);
+  } catch (error) {
+    console.error('Error fetching insurance:', error);
+    res.status(500).json({ message: 'Server error while fetching insurance information' });
   }
 });
 
