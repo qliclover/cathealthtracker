@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, momentLocalizer } from 'react-big-calendar';
-import moment from 'moment';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { API_ENDPOINTS } from './config';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from './config';
 
-const localizer = momentLocalizer(moment);
-
-function HealthCalendarPage() {
-  // 移除未使用的状态
-  // const [cats, setCats] = useState([]);
-  const [records, setRecords] = useState([]);
+function HealthTodoListPage() {
+  const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [newTodo, setNewTodo] = useState({ title: '', dueDate: '', catId: '' });
+  const [cats, setCats] = useState([]);
   const navigate = useNavigate();
 
+  // Fetch cats and health records data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -24,7 +20,7 @@ function HealthCalendarPage() {
           return;
         }
 
-        // 获取所有猫咪
+        // Fetch all cats
         const catsResponse = await fetch(API_ENDPOINTS.GET_CATS, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -36,31 +32,37 @@ function HealthCalendarPage() {
         }
 
         const catsData = await catsResponse.json();
-        // setCats(catsData); - 不再需要设置状态，但我们仍然需要数据
+        setCats(catsData);
 
-        // 获取所有猫咪的健康记录
-        const allRecords = [];
-        for (const cat of catsData) {
-          const recordsResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${cat.id}/records`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
+        // Create default todo tasks
+        const defaultTodos = [];
+        
+        // Generate health reminders for each cat
+        catsData.forEach(cat => {
+          // Vaccination reminder
+          defaultTodos.push({
+            id: `vaccine-${cat.id}`,
+            title: `Annual vaccination for ${cat.name}`,
+            completed: false,
+            dueDate: getNextAnnualDate(),
+            catId: cat.id,
+            catName: cat.name,
+            type: 'vaccination'
           });
-
-          if (recordsResponse.ok) {
-            const catRecords = await recordsResponse.json();
-            if (Array.isArray(catRecords)) {
-              // 添加猫咪信息到每条记录
-              const recordsWithCatInfo = catRecords.map(record => ({
-                ...record,
-                catName: cat.name,
-                catId: cat.id
-              }));
-              allRecords.push(...recordsWithCatInfo);
-            }
-          }
-        }
-        setRecords(allRecords);
+          
+          // Checkup reminder
+          defaultTodos.push({
+            id: `checkup-${cat.id}`,
+            title: `Regular checkup for ${cat.name}`,
+            completed: false,
+            dueDate: getNextQuarterlyDate(),
+            catId: cat.id,
+            catName: cat.name,
+            type: 'checkup'
+          });
+        });
+        
+        setTodos(defaultTodos);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -71,21 +73,62 @@ function HealthCalendarPage() {
     fetchData();
   }, [navigate]);
 
-  // 将记录转换为日历事件格式
-  const calendarEvents = records.map(record => ({
-    id: record.id,
-    title: `${record.catName} - ${record.type}`,
-    start: new Date(record.date),
-    end: new Date(record.date),
-    allDay: true,
-    resource: record
-  }));
-
-  // 处理事件点击
-  const handleEventClick = (event) => {
-    const record = event.resource;
-    navigate(`/records/${record.id}/edit`);
+  // Get next annual date
+  const getNextAnnualDate = () => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() + 1);
+    return date.toISOString().split('T')[0];
   };
+
+  // Get next quarterly date
+  const getNextQuarterlyDate = () => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 3);
+    return date.toISOString().split('T')[0];
+  };
+
+  // Add a new todo
+  const handleAddTodo = () => {
+    if (!newTodo.title || !newTodo.dueDate || !newTodo.catId) return;
+    
+    const cat = cats.find(c => c.id === parseInt(newTodo.catId));
+    const newTask = {
+      id: `todo-${Date.now()}`,
+      title: newTodo.title,
+      completed: false,
+      dueDate: newTodo.dueDate,
+      catId: parseInt(newTodo.catId),
+      catName: cat.name,
+      type: 'other'
+    };
+    
+    setTodos([...todos, newTask]);
+    setNewTodo({ title: '', dueDate: '', catId: '' });
+  };
+
+  // Toggle todo completion status
+  const handleToggleComplete = (id) => {
+    setTodos(todos.map(todo => 
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    ));
+  };
+
+  // Navigate to create health record page
+  const handleCreateRecord = (todo) => {
+    // Navigate to add record page with prefilled fields
+    navigate(`/cats/${todo.catId}/records/add?type=${todo.type}&title=${encodeURIComponent(todo.title)}`);
+  };
+
+  // Sort todos by due date
+  const sortedTodos = [...todos].sort((a, b) => 
+    new Date(a.dueDate) - new Date(b.dueDate)
+  );
+  
+  // Get upcoming tasks (within 30 days)
+  const upcoming = sortedTodos.filter(todo => 
+    !todo.completed && 
+    new Date(todo.dueDate) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  );
 
   if (loading) {
     return (
@@ -107,18 +150,135 @@ function HealthCalendarPage() {
 
   return (
     <div className="container mt-4">
-      <h2 className="mb-4">Health Calendar</h2>
-      <div className="card">
+      <h2 className="mb-4">Health Todos</h2>
+      
+      {upcoming.length > 0 && (
+        <div className="card mb-4 border-warning">
+          <div className="card-header bg-warning text-white">
+            <h4 className="mb-0">Upcoming Tasks</h4>
+          </div>
+          <div className="card-body">
+            <div className="list-group">
+              {upcoming.map(todo => (
+                <div key={todo.id} className="list-group-item list-group-item-action">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h5 className="mb-1">{todo.title}</h5>
+                      <small className="text-muted">
+                        <i className="bi bi-calendar3 me-1"></i>
+                        Due: {new Date(todo.dueDate).toLocaleDateString()}
+                      </small>
+                      <p className="mb-1">Cat: {todo.catName}</p>
+                    </div>
+                    <div>
+                      <button 
+                        className="btn btn-primary me-2"
+                        onClick={() => handleCreateRecord(todo)}
+                      >
+                        Create Record
+                      </button>
+                      <button 
+                        className="btn btn-success"
+                        onClick={() => handleToggleComplete(todo.id)}
+                      >
+                        Complete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <div className="card mb-4">
+        <div className="card-header">
+          <h4 className="mb-0">Add New Task</h4>
+        </div>
         <div className="card-body">
-          <div style={{ height: 600 }}>
-            <Calendar
-              localizer={localizer}
-              events={calendarEvents}
-              startAccessor="start"
-              endAccessor="end"
-              onSelectEvent={handleEventClick}
-              style={{ height: '100%' }}
-            />
+          <div className="row g-3">
+            <div className="col-md-4">
+              <select 
+                className="form-select" 
+                value={newTodo.catId}
+                onChange={(e) => setNewTodo({...newTodo, catId: e.target.value})}
+              >
+                <option value="">Select Cat</option>
+                {cats.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-4">
+              <input 
+                type="text" 
+                className="form-control" 
+                placeholder="Task description"
+                value={newTodo.title}
+                onChange={(e) => setNewTodo({...newTodo, title: e.target.value})}
+              />
+            </div>
+            <div className="col-md-2">
+              <input 
+                type="date" 
+                className="form-control"
+                value={newTodo.dueDate}
+                onChange={(e) => setNewTodo({...newTodo, dueDate: e.target.value})}
+              />
+            </div>
+            <div className="col-md-2">
+              <button 
+                className="btn btn-primary w-100"
+                onClick={handleAddTodo}
+              >
+                Add Task
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="card">
+        <div className="card-header">
+          <h4 className="mb-0">All Tasks</h4>
+        </div>
+        <div className="card-body">
+          <div className="list-group">
+            {sortedTodos.length === 0 ? (
+              <p>No tasks found. Add your first health reminder above.</p>
+            ) : (
+              sortedTodos.map(todo => (
+                <div key={todo.id} className={`list-group-item list-group-item-action ${todo.completed ? 'list-group-item-success' : ''}`}>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div className={todo.completed ? 'text-decoration-line-through' : ''}>
+                      <h5 className="mb-1">{todo.title}</h5>
+                      <small className="text-muted">
+                        <i className="bi bi-calendar3 me-1"></i>
+                        Due: {new Date(todo.dueDate).toLocaleDateString()}
+                      </small>
+                      <p className="mb-1">Cat: {todo.catName}</p>
+                    </div>
+                    <div>
+                      {!todo.completed && (
+                        <button 
+                          className="btn btn-primary btn-sm me-2"
+                          onClick={() => handleCreateRecord(todo)}
+                        >
+                          Create Record
+                        </button>
+                      )}
+                      <button 
+                        className={`btn btn-sm ${todo.completed ? 'btn-outline-success' : 'btn-success'}`}
+                        onClick={() => handleToggleComplete(todo.id)}
+                      >
+                        {todo.completed ? 'Undo' : 'Complete'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -126,4 +286,4 @@ function HealthCalendarPage() {
   );
 }
 
-export default HealthCalendarPage;
+export default HealthTodoListPage;
