@@ -21,10 +21,6 @@
     {
       "src": "/(.*)",
       "dest": "/index.html"
-    },
-    {
-      "src": "/api/calendar\\.ics",
-      "dest": "/index.js"
     }
   ],
   "env": {
