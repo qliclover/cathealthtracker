@@ -9,15 +9,56 @@ const fs = require('fs');
 const multer = require('multer');
 const ical = require('ical-generator').default; // Changed import method
 
+// Connection pool management for serverless environment
+let isConnected = false;
+
+const connectToDB = async () => {
+  if (isConnected) {
+    return;
+  }
+  
+  try {
+    await prisma.$connect();
+    isConnected = true;
+    console.log('Connected to database');
+  } catch (e) {
+    console.error('Database connection error:', e);
+    isConnected = false;
+    
+    // Try to reconnect after a delay
+    setTimeout(connectToDB, 5000);
+  }
+};
+
+// Initial connection
+connectToDB();
+
 // Initialize Prisma client with logging for easier debugging
 const prisma = new PrismaClient({
   log: ['error', 'warn'],
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  },
+  // Increase timeouts to handle connection delays
+  connectionTimeout: 30000, // 30 seconds
+  // Reduce max connections for serverless environment
+  __internal: {
+    engine: {
+      connectionLimit: 1
+    }
+  }
 });
 
 // Test database connection
 prisma.$connect()
   .then(() => console.log('Connected to database'))
-  .catch((e) => console.error('Failed to connect to database:', e));
+  .catch((e) => {
+    console.error('Failed to connect to database:', e);
+    // Don't crash the server on connection issues
+    console.log('Server will continue running despite database connection issues');
+  });
 
 const app = express();
 
