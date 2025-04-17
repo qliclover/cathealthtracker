@@ -14,10 +14,32 @@ const prisma = new PrismaClient({
   log: ['error', 'warn'],
 });
 
-// Test database connection
-prisma.$connect()
-  .then(() => console.log('Connected to database'))
-  .catch((e) => console.error('Failed to connect to database:', e));
+// Improved database connection logic with retries
+let connectionRetries = 0;
+const maxRetries = 5;
+
+const connectWithRetry = async () => {
+  try {
+    await prisma.$connect();
+    console.log('Connected to database');
+    connectionRetries = 0;  // Reset retry counter on successful connection
+  } catch (e) {
+    connectionRetries++;
+    console.error(`Database connection attempt ${connectionRetries} failed:`, e);
+    
+    if (connectionRetries < maxRetries) {
+      console.log(`Retrying connection in 5 seconds... (Attempt ${connectionRetries + 1}/${maxRetries})`);
+      
+      // Retry after 5 seconds
+      setTimeout(connectWithRetry, 5000);
+    } else {
+      console.error('Maximum connection retries reached. Please check your database configuration.');
+    }
+  }
+};
+
+// Start connecting to database
+connectWithRetry();
 
 const app = express();
 
@@ -92,6 +114,11 @@ app.post('/api/register', async (req, res) => {
     // Check if email already exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      return null;
     });
 
     if (existingUser) {
@@ -108,6 +135,19 @@ app.post('/api/register', async (req, res) => {
         email,
         password: hashedPassword
       }
+    }).catch(async (error) => {
+      // If creation fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      // Retry creation after reconnect
+      return await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword
+        }
+      });
     });
 
     // Generate JWT token
@@ -142,6 +182,14 @@ app.post('/api/login', async (req, res) => {
     // Find user by email
     const user = await prisma.user.findUnique({
       where: { email }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting and retry
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.user.findUnique({
+        where: { email }
+      });
     });
 
     if (!user) {
@@ -178,11 +226,23 @@ app.post('/api/login', async (req, res) => {
 // Get all cats for the authenticated user
 app.get('/api/cats', authenticateToken, async (req, res) => {
   try {
+    // Try to fetch cats with retry logic
     const cats = await prisma.cat.findMany({
       where: { ownerId: req.user.userId },
       orderBy: { createdAt: 'desc' }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      // Retry query after reconnect
+      return await prisma.cat.findMany({
+        where: { ownerId: req.user.userId },
+        orderBy: { createdAt: 'desc' }
+      });
     });
-    res.json(cats);
+    
+    res.json(cats || []);  // Ensure we always return an array
   } catch (error) {
     console.error('Get cats error:', error);
     res.status(500).json({ message: 'Failed to get cat list' });
@@ -198,6 +258,19 @@ app.get('/api/cats/:id', authenticateToken, async (req, res) => {
         healthRecords: true,
         insurance: true  // Include insurance data
       }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      // Retry query after reconnect
+      return await prisma.cat.findUnique({
+        where: { id: parseInt(req.params.id) },
+        include: { 
+          healthRecords: true,
+          insurance: true
+        }
+      });
     });
 
     if (!cat) {
@@ -232,6 +305,22 @@ app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res
         imageUrl,
         ownerId: req.user.userId
       }
+    }).catch(async (error) => {
+      // If creation fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      // Retry creation after reconnect
+      return await prisma.cat.create({
+        data: {
+          name,
+          breed,
+          age: age ? parseInt(age) : null,
+          weight: weight ? parseFloat(weight) : null,
+          imageUrl,
+          ownerId: req.user.userId
+        }
+      });
     });
 
     res.status(201).json(cat);
@@ -250,6 +339,14 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
     // Check if the cat exists and belongs to current user
     const existingCat = await prisma.cat.findUnique({
       where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
     });
 
     if (!existingCat) {
@@ -272,6 +369,21 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
         weight: weight ? parseFloat(weight) : null,
         imageUrl
       }
+    }).catch(async (error) => {
+      // If update fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.update({
+        where: { id: catId },
+        data: {
+          name,
+          breed,
+          age: age ? parseInt(age) : null,
+          weight: weight ? parseFloat(weight) : null,
+          imageUrl
+        }
+      });
     });
 
     res.json(updatedCat);
@@ -290,6 +402,14 @@ app.post('/api/cats/:catId/records', authenticateToken, upload.single('file'), a
     // Check if the cat exists and belongs to current user
     const cat = await prisma.cat.findUnique({
       where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
     });
 
     if (!cat) {
@@ -312,6 +432,21 @@ app.post('/api/cats/:catId/records', authenticateToken, upload.single('file'), a
         fileUrl,
         catId
       }
+    }).catch(async (error) => {
+      // If creation fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.healthRecord.create({
+        data: {
+          type,
+          date: new Date(date),
+          description,
+          notes,
+          fileUrl,
+          catId
+        }
+      });
     });
 
     res.status(201).json(record);
@@ -329,6 +464,14 @@ app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {
     // Check if the cat exists and belongs to the current user
     const cat = await prisma.cat.findUnique({
       where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
     });
 
     if (!cat) {
@@ -342,9 +485,18 @@ app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {
     const records = await prisma.healthRecord.findMany({
       where: { catId },
       orderBy: { date: 'desc' }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.healthRecord.findMany({
+        where: { catId },
+        orderBy: { date: 'desc' }
+      });
     });
 
-    res.json(records);
+    res.json(records || []);
   } catch (error) {
     console.error('Get health records error:', error);
     res.status(500).json({ message: 'Failed to get health records' });
@@ -360,6 +512,15 @@ app.get('/api/records/:id', authenticateToken, async (req, res) => {
     const record = await prisma.healthRecord.findUnique({
       where: { id: recordId },
       include: { cat: true }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.healthRecord.findUnique({
+        where: { id: recordId },
+        include: { cat: true }
+      });
     });
     
     if (!record) {
@@ -388,6 +549,15 @@ app.put('/api/records/:id', authenticateToken, upload.single('file'), async (req
     const record = await prisma.healthRecord.findUnique({
       where: { id: recordId },
       include: { cat: true }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.healthRecord.findUnique({
+        where: { id: recordId },
+        include: { cat: true }
+      });
     });
 
     if (!record) {
@@ -414,6 +584,21 @@ app.put('/api/records/:id', authenticateToken, upload.single('file'), async (req
         notes,
         fileUrl
       }
+    }).catch(async (error) => {
+      // If update fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.healthRecord.update({
+        where: { id: recordId },
+        data: {
+          type,
+          date: new Date(date),
+          description,
+          notes,
+          fileUrl
+        }
+      });
     });
 
     res.json(updatedRecord);
@@ -431,6 +616,14 @@ app.get('/api/cats/:catId/insurance', authenticateToken, async (req, res) => {
     // Check if the cat exists and belongs to the current user
     const cat = await prisma.cat.findUnique({
       where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
     });
 
     if (!cat) {
@@ -444,9 +637,18 @@ app.get('/api/cats/:catId/insurance', authenticateToken, async (req, res) => {
     const insurance = await prisma.insurance.findMany({
       where: { catId },
       orderBy: { startDate: 'desc' }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.findMany({
+        where: { catId },
+        orderBy: { startDate: 'desc' }
+      });
     });
 
-    res.json(insurance);
+    res.json(insurance || []);
   } catch (error) {
     console.error('Get insurance error:', error);
     res.status(500).json({ message: 'Failed to get insurance information' });
@@ -462,6 +664,14 @@ app.post('/api/cats/:catId/insurance', authenticateToken, async (req, res) => {
     // Check if the cat exists and belongs to the current user
     const cat = await prisma.cat.findUnique({
       where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
     });
 
     if (!cat) {
@@ -482,6 +692,22 @@ app.post('/api/cats/:catId/insurance', authenticateToken, async (req, res) => {
         premium: premium ? parseFloat(premium) : null,
         catId
       }
+    }).catch(async (error) => {
+      // If creation fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.create({
+        data: {
+          provider,
+          policyNumber,
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          coverage,
+          premium: premium ? parseFloat(premium) : null,
+          catId
+        }
+      });
     });
 
     res.status(201).json(insurance);
@@ -500,6 +726,15 @@ app.get('/api/insurance/:id', authenticateToken, async (req, res) => {
     const insurance = await prisma.insurance.findUnique({
       where: { id: insuranceId },
       include: { cat: true }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.findUnique({
+        where: { id: insuranceId },
+        include: { cat: true }
+      });
     });
     
     if (!insurance) {
@@ -528,6 +763,15 @@ app.put('/api/insurance/:id', authenticateToken, async (req, res) => {
     const insurance = await prisma.insurance.findUnique({
       where: { id: insuranceId },
       include: { cat: true }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.findUnique({
+        where: { id: insuranceId },
+        include: { cat: true }
+      });
     });
 
     if (!insurance) {
@@ -548,6 +792,22 @@ app.put('/api/insurance/:id', authenticateToken, async (req, res) => {
         coverage,
         premium: premium ? parseFloat(premium) : null
       }
+    }).catch(async (error) => {
+      // If update fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.update({
+        where: { id: insuranceId },
+        data: {
+          provider,
+          policyNumber,
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          coverage,
+          premium: premium ? parseFloat(premium) : null
+        }
+      });
     });
 
     res.json(updatedInsurance);
@@ -566,6 +826,15 @@ app.delete('/api/insurance/:id', authenticateToken, async (req, res) => {
     const insurance = await prisma.insurance.findUnique({
       where: { id: insuranceId },
       include: { cat: true }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.findUnique({
+        where: { id: insuranceId },
+        include: { cat: true }
+      });
     });
 
     if (!insurance) {
@@ -578,6 +847,14 @@ app.delete('/api/insurance/:id', authenticateToken, async (req, res) => {
 
     await prisma.insurance.delete({
       where: { id: insuranceId }
+    }).catch(async (error) => {
+      // If delete fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.delete({
+        where: { id: insuranceId }
+      });
     });
 
     res.json({ message: 'Insurance information deleted successfully' });
@@ -608,6 +885,15 @@ app.get('/api/calendar.ics', async (req, res) => {
     const cats = await prisma.cat.findMany({ 
       where: { ownerId: payload.userId },
       include: { healthRecords: true } // Include health records
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findMany({
+        where: { ownerId: payload.userId },
+        include: { healthRecords: true }
+      });
     });
 
     // Create an iCal calendar with safe defaults
