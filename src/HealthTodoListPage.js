@@ -135,6 +135,51 @@ function HealthTodoListPage() {
       console.error('Navigation failed to', path, err);
     }
   };
+  
+  // Function to generate and download an .ics file for a single task
+  const handleAddToCalendar = (todo) => {
+    // Create calendar event content
+    const eventStart = new Date(todo.dueDate);
+    const eventEnd = new Date(eventStart);
+    eventEnd.setDate(eventEnd.getDate() + 1); // End time is start time + 1 day
+    
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Cat Health Tracker//Health Tasks//EN',
+      'CALSCALE:GREGORIAN',
+      'BEGIN:VEVENT',
+      `SUMMARY:${todo.title}`,
+      `DTSTART:${formatDateForICS(eventStart)}`,
+      `DTEND:${formatDateForICS(eventEnd)}`,
+      `DESCRIPTION:Health task for cat: ${todo.catName}\\nType: ${todo.type}`,
+      `LOCATION:Cat Health Tracker`,
+      'STATUS:CONFIRMED',
+      `UID:${todo.id}@cathealthtracker.vercel.app`,
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Reminder',
+      'TRIGGER:-PT24H',
+      'END:VALARM',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+    
+    // Create a Blob object and generate a download link
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${todo.type}-${todo.catName}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Helper function to format date for ICS format
+  const formatDateForICS = (date) => {
+    return date.toISOString().replace(/-|:|\.\d+/g, '').slice(0, 15) + 'Z';
+  };
 
   // Get appropriate badge color based on task type
   const getTypeBadgeClass = type => {
@@ -180,22 +225,6 @@ function HealthTodoListPage() {
     <div className="container mt-4">
       <h2 className="mb-4">Health Tasks</h2>
 
-      {/* Calendar subscription link - fixed to use the correct API_ENDPOINTS.BASE_URL */}
-      <div className="mb-4">
-        <a
-          href={`${API_ENDPOINTS.BASE_URL}/api/calendar.ics?token=${localStorage.getItem('token')}`}
-          target="_blank"
-          rel="noreferrer"
-          className="btn btn-outline-primary"
-        >
-          <i className="bi bi-calendar-plus me-2"></i>
-          Subscribe to Health Reminders Calendar
-        </a>
-        <small className="text-muted d-block mt-1">
-          Add these reminders to your personal calendar app
-        </small>
-      </div>
-
       {upcoming.length > 0 && (
         <div className="card mb-4 border-warning">
           <div className="card-header bg-warning text-white">
@@ -217,10 +246,23 @@ function HealthTodoListPage() {
                     </div>
                   </div>
                   <div>
-                    <button className="btn btn-primary btn-sm me-2" onClick={() => handleCreateRecord(todo)}>
+                    <button 
+                      className="btn btn-outline-info btn-sm me-2"
+                      onClick={() => handleAddToCalendar(todo)}
+                    >
+                      <i className="bi bi-calendar-plus me-1"></i>
+                      Add to Calendar
+                    </button>
+                    <button 
+                      className="btn btn-primary btn-sm me-2" 
+                      onClick={() => handleCreateRecord(todo)}
+                    >
                       Create Record
                     </button>
-                    <button className="btn btn-success btn-sm" onClick={() => handleToggleComplete(todo.id)}>
+                    <button 
+                      className="btn btn-success btn-sm" 
+                      onClick={() => handleToggleComplete(todo.id)}
+                    >
                       Complete
                     </button>
                   </div>
@@ -317,9 +359,21 @@ function HealthTodoListPage() {
                 </div>
                 <div>
                   {!todo.completed && (
-                    <button className="btn btn-primary btn-sm me-2" onClick={() => handleCreateRecord(todo)}>
-                      Create Record
-                    </button>
+                    <>
+                      <button 
+                        className="btn btn-outline-info btn-sm me-2"
+                        onClick={() => handleAddToCalendar(todo)}
+                      >
+                        <i className="bi bi-calendar-plus me-1"></i>
+                        Add to Calendar
+                      </button>
+                      <button 
+                        className="btn btn-primary btn-sm me-2" 
+                        onClick={() => handleCreateRecord(todo)}
+                      >
+                        Create Record
+                      </button>
+                    </>
                   )}
                   <button
                     className={`btn btn-sm ${
