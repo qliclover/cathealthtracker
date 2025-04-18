@@ -159,20 +159,29 @@ function CatDetailsPage() {
                   Edit Information
                 </button>
               </div>
-              {cat.imageUrl && (
-                <div className="cat-photo-container text-center mb-3">
+              {cat.imageUrl ? (
+                <div className="text-center mb-3">
                   <img 
                     src={cat.imageUrl} 
                     alt={cat.name} 
-                    className="cat-photo"
                     style={{ maxHeight: '200px', maxWidth: '100%', objectFit: 'contain', borderRadius: '8px' }}
                     onError={(e) => {
-                      e.target.onerror = null; 
-                      e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23F8F9FA'/%3E%3Ctext x='200' y='150' font-family='Arial' font-size='24' fill='%23DEE2E6' text-anchor='middle' dominant-baseline='middle'%3ECat Photo%3C/text%3E%3C/svg%3E";
+                      console.log("图片加载失败，使用占位图");
+                      e.target.onerror = null;
+                      e.target.src = "https://placehold.co/400x300?text=Cat+Photo";
                     }}
                   />
                 </div>
+              ) : (
+                <div className="text-center mb-3">
+                  <img 
+                    src="https://placehold.co/400x300?text=Cat+Photo" 
+                    alt="Default cat" 
+                    style={{ maxHeight: '200px', maxWidth: '100%', objectFit: 'contain', borderRadius: '8px' }}
+                  />
+                </div>
               )}
+              
               <div className="mb-3">
                 <strong>Breed:</strong> {cat.breed}
               </div>

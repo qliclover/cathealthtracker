@@ -235,19 +235,23 @@ function DashboardPage() {
                     <div key={cat.id} className="col">
                       <Link to={`/cats/${cat.id}`} className="text-decoration-none">
                         <div className="card h-100 border-0 shadow-sm">
-                        {cat.imageUrl && (
-                            <div className="cat-photo-container text-center mb-3">
-                                <img 
+                        {cat.imageUrl ? (
+                            <img 
                                 src={cat.imageUrl} 
-                                alt={cat.name} 
-                                className="cat-photo"
+                                alt={cat.name}
                                 style={{ width: 'auto', maxHeight: '150px', objectFit: 'contain' }}
                                 onError={(e) => {
-                                    e.target.onerror = null; 
-                                    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23F8F9FA'/%3E%3Ctext x='200' y='150' font-family='Arial' font-size='24' fill='%23DEE2E6' text-anchor='middle' dominant-baseline='middle'%3ECat Photo%3C/text%3E%3C/svg%3E";
+                                console.log("图片加载失败，使用占位图");
+                                e.target.onerror = null; 
+                                e.target.src = "https://placehold.co/400x300?text=Cat+Photo";
                                 }}
-                                />
-                            </div>
+                            />
+                            ) : (
+                            <img 
+                                src="https://placehold.co/400x300?text=Cat+Photo" 
+                                alt="Default cat"
+                                style={{ width: 'auto', maxHeight: '150px', objectFit: 'contain' }}
+                            />
                             )}
                           <div className="card-body text-center">
                             <h5 className="card-title mb-1">{cat.name}</h5>
