@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const ical = require('ical-generator').default; // Changed import method
+const defaultImageUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23F8F9FA'/%3E%3Ctext x='200' y='150' font-family='Arial' font-size='24' fill='%23DEE2E6' text-anchor='middle' dominant-baseline='middle'%3ECarPhoto%3C/text%3E%3C/svg%3E";
 
 // Initialize Prisma client with logging for easier debugging
 const prisma = new PrismaClient({
@@ -297,7 +298,7 @@ app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res
   try {
     const { name, breed, age, weight } = req.body;
     
-    const imageUrl = "https://via.placeholder.com/400x300?text=Cat+Photo";
+    const imageUrl = defaultImageUrl;
 
     const cat = await prisma.cat.create({
       data: {
@@ -361,7 +362,7 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
     }
 
     // Keep existing image or use placeholder
-    const imageUrl = existingCat.imageUrl || "https://placehold.co/400x300?text=Cat+Photo";
+    const imageUrl = existingCat.imageUrl || defaultImageUrl;
 
     const updatedCat = await prisma.cat.update({
       where: { id: catId },

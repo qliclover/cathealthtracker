@@ -243,7 +243,7 @@ function DashboardPage() {
                                 className="cat-photo"
                                 onError={(e) => {
                                     e.target.onerror = null; 
-                                    e.target.src = "https://via.placeholder.com/400x300?text=Cat+Photo";
+                                    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23F8F9FA'/%3E%3Ctext x='200' y='150' font-family='Arial' font-size='24' fill='%23DEE2E6' text-anchor='middle' dominant-baseline='middle'%3ECat Photo%3C/text%3E%3C/svg%3E";
                                 }}
                                 />
                             </div>

@@ -115,7 +115,7 @@ function HealthCalendarPage() {
               endAccessor="end"
               onSelectEvent={handleEventClick}
               style={{ height: '100%' }}
-              views={['month', 'week', 'day']} // No agenda view
+              views={['month', 'week', 'day']} 
               defaultView="month"
             />
           </div>
