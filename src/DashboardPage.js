@@ -236,18 +236,19 @@ function DashboardPage() {
                       <Link to={`/cats/${cat.id}`} className="text-decoration-none">
                         <div className="card h-100 border-0 shadow-sm">
                         {cat.imageUrl && (
-                            <div className="cat-photo-container mb-3">
+                            <div className="cat-photo-container text-center mb-3">
                                 <img 
-                                src={cat.imageUrl.startsWith('http') ? cat.imageUrl : `${API_ENDPOINTS.BASE_URL}${cat.imageUrl}`} 
+                                src={cat.imageUrl} 
                                 alt={cat.name} 
                                 className="cat-photo"
+                                style={{ width: 'auto', maxHeight: '150px', objectFit: 'contain' }}
                                 onError={(e) => {
                                     e.target.onerror = null; 
                                     e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23F8F9FA'/%3E%3Ctext x='200' y='150' font-family='Arial' font-size='24' fill='%23DEE2E6' text-anchor='middle' dominant-baseline='middle'%3ECat Photo%3C/text%3E%3C/svg%3E";
                                 }}
                                 />
                             </div>
-                        )}
+                            )}
                           <div className="card-body text-center">
                             <h5 className="card-title mb-1">{cat.name}</h5>
                             <p className="card-text small text-muted mb-0">{cat.breed}</p>

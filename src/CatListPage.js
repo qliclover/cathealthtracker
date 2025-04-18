@@ -79,20 +79,34 @@ function CatListPage() {
         <div className="row">
           {cats.map(cat => (
             <div key={cat.id} className="col-md-4 mb-4">
-              <div className="card h-100">
-                <div className="card-body">
-                  <h5 className="card-title">{cat.name}</h5>
-                  <h6 className="card-subtitle mb-2 text-muted">{cat.breed}</h6>
-                  <p className="card-text">
-                    <strong>Age:</strong> {cat.age} years<br />
-                    <strong>Weight:</strong> {cat.weight} kg
-                  </p>
-                  <Link to={`/cats/${cat.id}`} className="btn btn-outline-primary">
-                    View Details
-                  </Link>
+            <div className="card h-100">
+              {cat.imageUrl && (
+                <div className="text-center pt-3">
+                  <img 
+                    src={cat.imageUrl} 
+                    alt={cat.name}
+                    className="card-img-top" 
+                    style={{ width: 'auto', maxHeight: '150px', objectFit: 'contain', margin: '0 auto' }}
+                    onError={(e) => {
+                      e.target.onerror = null; 
+                      e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23F8F9FA'/%3E%3Ctext x='200' y='150' font-family='Arial' font-size='24' fill='%23DEE2E6' text-anchor='middle' dominant-baseline='middle'%3ECat Photo%3C/text%3E%3C/svg%3E";
+                    }}
+                  />
                 </div>
+              )}
+              <div className="card-body">
+                <h5 className="card-title">{cat.name}</h5>
+                <h6 className="card-subtitle mb-2 text-muted">{cat.breed}</h6>
+                <p className="card-text">
+                  <strong>Age:</strong> {cat.age} years<br />
+                  <strong>Weight:</strong> {cat.weight} kg
+                </p>
+                <Link to={`/cats/${cat.id}`} className="btn btn-outline-primary">
+                  View Details
+                </Link>
               </div>
             </div>
+          </div>
           ))}
         </div>
       )}
