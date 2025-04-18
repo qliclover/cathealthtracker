@@ -275,6 +275,52 @@ app.get('/api/cats', authenticateToken, async (req, res) => {
   }
 });
 
+// Delete a cat
+app.delete('/api/cats/:id', authenticateToken, async (req, res) => {
+  try {
+    const catId = parseInt(req.params.id);
+
+    // Check if the cat exists and belongs to current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to delete this cat' });
+    }
+
+    // Delete the cat
+    await prisma.cat.delete({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If delete fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.delete({
+        where: { id: catId }
+      });
+    });
+
+    res.json({ message: 'Cat deleted successfully' });
+  } catch (error) {
+    console.error('Delete cat error:', error);
+    res.status(500).json({ message: 'Failed to delete cat' });
+  }
+});
+
 // Get a single cat along with its health records and care tasks
 app.get('/api/cats/:id', authenticateToken, async (req, res) => {
   try {

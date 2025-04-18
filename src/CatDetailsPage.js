@@ -16,6 +16,7 @@ function CatDetailsPage() {
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Function to truncate text if it's too long
   const truncate = (text, limit) => {
@@ -112,6 +113,33 @@ function CatDetailsPage() {
     navigate(`/insurance/${insuranceId}/edit`);
   };
 
+  // Handle cat delete function
+  const handleDeleteCat = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete cat');
+      }
+
+      // Return to the catlistpage
+      navigate('/cats');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // confirmation
+  const toggleConfirmDelete = () => {
+    setConfirmDelete(!confirmDelete);
+  };
+
   // Check if insurance is active
   const isInsuranceActive = (policy) => {
     const today = new Date();
@@ -154,10 +182,16 @@ function CatDetailsPage() {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2>{cat.name}</h2>
-                <button className="btn btn-outline-primary" onClick={handleEditCat}>
-                  <i className="bi bi-pencil-square me-2"></i>
-                  Edit Information
-                </button>
+                <div>
+                  <button className="btn btn-outline-primary me-2" onClick={handleEditCat}>
+                    <i className="bi bi-pencil-square me-2"></i>
+                    Edit
+                  </button>
+                  <button className="btn btn-outline-danger" onClick={toggleConfirmDelete}>
+                    <i className="bi bi-trash me-2"></i>
+                    Delete
+                  </button>
+                </div>
               </div>
               {cat.imageUrl ? (
                 <div className="text-center mb-3">
@@ -166,7 +200,6 @@ function CatDetailsPage() {
                     alt={cat.name} 
                     style={{ maxHeight: '200px', maxWidth: '100%', objectFit: 'contain', borderRadius: '8px' }}
                     onError={(e) => {
-                      console.log("图片加载失败，使用占位图");
                       e.target.onerror = null;
                       e.target.src = "https://placehold.co/400x300?text=Cat+Photo";
                     }}
@@ -198,6 +231,23 @@ function CatDetailsPage() {
               )}
             </div>
           </div>
+          {/* Deletion confirmation alert */}
+          {confirmDelete && (
+            <div className="card mb-4 border-danger">
+              <div className="card-body">
+                <h5 className="card-title text-danger">Delete Cat</h5>
+                <p>Are you sure you want to delete {cat.name}? This action cannot be undone.</p>
+                <div className="d-flex justify-content-end">
+                  <button className="btn btn-outline-secondary me-2" onClick={toggleConfirmDelete}>
+                    Cancel
+                  </button>
+                  <button className="btn btn-danger" onClick={handleDeleteCat}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Insurance Information */}
           <div className="card mb-4">
@@ -293,7 +343,7 @@ function CatDetailsPage() {
                               {new Date(record.date).toLocaleDateString()}
                             </small>
                           </p>
-                          {/* Display record description with expand/collapse functionality */}
+
                           <p className="mb-1">
                             {record.description && (
                               expandedRecords[record.id]
@@ -317,7 +367,7 @@ function CatDetailsPage() {
                               </small>
                             </p>
                           )}
-                          {/* Display file link if available */}
+
                           {record.fileUrl && (
                             <p className="mb-1">
                               <a 
