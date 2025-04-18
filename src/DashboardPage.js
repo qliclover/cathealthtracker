@@ -7,7 +7,7 @@ function DashboardPage() {
   const [healthRecords, setHealthRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeMealTab, setActiveMealTab] = useState('morning');
+  const [activeMealTab, setActiveMealTab] = useState('first');
   const navigate = useNavigate();
 
   // Sample meal timetable data - replace with actual data from API later
