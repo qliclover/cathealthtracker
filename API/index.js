@@ -297,8 +297,7 @@ app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res
   try {
     const { name, breed, age, weight } = req.body;
     
-    // Use placeholder image URL instead of file upload
-    const imageUrl = "https://placehold.co/400x300?text=Cat+Photo";
+    const imageUrl = "https://via.placeholder.com/400x300?text=Cat+Photo";
 
     const cat = await prisma.cat.create({
       data: {

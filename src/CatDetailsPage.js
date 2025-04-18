@@ -159,13 +159,16 @@ function CatDetailsPage() {
                   Edit Information
                 </button>
               </div>
-              {/* Show cat photo if available */}
               {cat.imageUrl && (
                 <div className="cat-photo-container mb-3">
                   <img 
-                    src={cat.imageUrl} 
+                    src={cat.imageUrl.startsWith('http') ? cat.imageUrl : `${API_ENDPOINTS.BASE_URL}${cat.imageUrl}`} 
                     alt={cat.name} 
                     className="cat-photo"
+                    onError={(e) => {
+                      e.target.onerror = null; 
+                      e.target.src = "https://via.placeholder.com/400x300?text=Cat+Photo";
+                    }}
                   />
                 </div>
               )}

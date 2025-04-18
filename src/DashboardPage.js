@@ -235,15 +235,19 @@ function DashboardPage() {
                     <div key={cat.id} className="col">
                       <Link to={`/cats/${cat.id}`} className="text-decoration-none">
                         <div className="card h-100 border-0 shadow-sm">
-                          {cat.imageUrl && (
-                            <div style={{ height: '120px', overflow: 'hidden' }}>
-                              <img 
-                                src={cat.imageUrl} 
-                                alt={cat.name}
-                                className="card-img-top object-fit-cover h-100 w-100" 
-                              />
+                        {cat.imageUrl && (
+                            <div className="cat-photo-container mb-3">
+                                <img 
+                                src={cat.imageUrl.startsWith('http') ? cat.imageUrl : `${API_ENDPOINTS.BASE_URL}${cat.imageUrl}`} 
+                                alt={cat.name} 
+                                className="cat-photo"
+                                onError={(e) => {
+                                    e.target.onerror = null; 
+                                    e.target.src = "https://via.placeholder.com/400x300?text=Cat+Photo";
+                                }}
+                                />
                             </div>
-                          )}
+                        )}
                           <div className="card-body text-center">
                             <h5 className="card-title mb-1">{cat.name}</h5>
                             <p className="card-text small text-muted mb-0">{cat.breed}</p>
