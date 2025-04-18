@@ -37,6 +37,11 @@ function Navbar() {
             {isLoggedIn ? (
               <>
                 <li className="nav-item">
+                <Link className="nav-link" to="/">
+                  <i className="bi bi-speedometer2 me-1"></i>Dashboard
+                </Link>
+                </li>
+                <li className="nav-item">
                   <Link className="nav-link" to="/cats">
                     <i className="bi bi-house-door me-1"></i>My Cats
                   </Link>

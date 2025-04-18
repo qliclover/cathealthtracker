@@ -13,6 +13,7 @@ import HealthCalendarPage from './HealthCalendarPage';
 import HealthTodoListPage from './HealthTodoListPage';
 import AddInsurancePage from './AddInsurancePage';
 import EditInsurancePage from './EditInsurancePage';
+import DashboardPage from './DashboardPage';
 import './styles/index.css'; // Import the styles
 
 // Protected route component
@@ -120,6 +121,12 @@ function App() {
           <Route path="/insurance/:id/edit" element={
             <ProtectedRoute>
               <EditInsurancePage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/" element={
+            <ProtectedRoute>
+              <DashboardPage />
             </ProtectedRoute>
           } />
           

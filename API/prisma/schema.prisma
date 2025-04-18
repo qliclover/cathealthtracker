@@ -29,6 +29,7 @@ model Cat {
   imageUrl     String?        
   owner        User           @relation(fields: [ownerId], references: [id])
   ownerId      Int
+  careTasks    CareTask[]
   healthRecords HealthRecord[]
   insurance    Insurance[]
   createdAt    DateTime       @default(now())
@@ -60,4 +61,17 @@ model Insurance {
   catId        Int
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+model CareTask {
+  id          Int       @id @default(autoincrement())
+  title       String
+  type        String    
+  taskType    String    
+  completed   Boolean   @default(false)
+  date        DateTime
+  cat         Cat       @relation(fields: [catId], references: [id])
+  catId       Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

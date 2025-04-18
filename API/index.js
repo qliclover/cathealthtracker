@@ -78,7 +78,9 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: ['/api/register', '/api/login'],
       cats: ['/api/cats', '/api/cats/:id'],
-      records: ['/api/cats/:catId/records', '/api/records/:id']
+      records: ['/api/cats/:catId/records', '/api/records/:id'],
+      insurance: ['/api/cats/:catId/insurance', '/api/insurance/:id'],
+      careTasks: ['/api/cats/:catId/caretasks', '/api/caretasks/:id']
     }
   });
 });
@@ -249,14 +251,15 @@ app.get('/api/cats', authenticateToken, async (req, res) => {
   }
 });
 
-// Get a single cat along with its health records
+// Get a single cat along with its health records and care tasks
 app.get('/api/cats/:id', authenticateToken, async (req, res) => {
   try {
     const cat = await prisma.cat.findUnique({
       where: { id: parseInt(req.params.id) },
       include: { 
         healthRecords: true,
-        insurance: true  // Include insurance data
+        insurance: true,
+        careTasks: true
       }
     }).catch(async (error) => {
       // If query fails, try reconnecting
@@ -268,7 +271,8 @@ app.get('/api/cats/:id', authenticateToken, async (req, res) => {
         where: { id: parseInt(req.params.id) },
         include: { 
           healthRecords: true,
-          insurance: true
+          insurance: true,
+          careTasks: true
         }
       });
     });
@@ -608,6 +612,180 @@ app.put('/api/records/:id', authenticateToken, upload.single('file'), async (req
   }
 });
 
+// Get all care tasks for a cat
+app.get('/api/cats/:catId/caretasks', authenticateToken, async (req, res) => {
+  try {
+    const catId = parseInt(req.params.catId);
+
+    // Check if the cat exists and belongs to the current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to view tasks for this cat' });
+    }
+
+    // Get today's date at midnight for filtering
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tasks = await prisma.careTask.findMany({
+      where: { 
+        catId,
+        date: {
+          gte: today
+        }
+      },
+      orderBy: { date: 'asc' }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.findMany({
+        where: { 
+          catId,
+          date: {
+            gte: today
+          }
+        },
+        orderBy: { date: 'asc' }
+      });
+    });
+
+    res.json(tasks || []);
+  } catch (error) {
+    console.error('Get care tasks error:', error);
+    res.status(500).json({ message: 'Failed to get care tasks' });
+  }
+});
+
+// Create a care task for a cat
+app.post('/api/cats/:catId/caretasks', authenticateToken, async (req, res) => {
+  try {
+    const { title, type, taskType, date, icon } = req.body;
+    const catId = parseInt(req.params.catId);
+
+    // Check if the cat exists and belongs to the current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to add tasks for this cat' });
+    }
+
+    const task = await prisma.careTask.create({
+      data: {
+        title,
+        type, // daily, monthly, annual
+        taskType, // litter, water, play, etc.
+        date: new Date(date),
+        icon,
+        completed: false,
+        catId
+      }
+    }).catch(async (error) => {
+      // If creation fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.create({
+        data: {
+          title,
+          type,
+          taskType,
+          date: new Date(date),
+          icon,
+          completed: false,
+          catId
+        }
+      });
+    });
+
+    res.status(201).json(task);
+  } catch (error) {
+    console.error('Add care task error:', error);
+    res.status(500).json({ message: 'Failed to add care task' });
+  }
+});
+
+// Update care task (mark as complete/incomplete)
+app.put('/api/caretasks/:id', authenticateToken, async (req, res) => {
+  try {
+    const { completed } = req.body;
+    const taskId = parseInt(req.params.id);
+
+    // Retrieve the task with associated cat data
+    const task = await prisma.careTask.findUnique({
+      where: { id: taskId },
+      include: { cat: true }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.findUnique({
+        where: { id: taskId },
+        include: { cat: true }
+      });
+    });
+
+    if (!task) {
+      return res.status(404).json({ message: 'Care task not found' });
+    }
+
+    // Verify that the task belongs to a cat owned by the authenticated user
+    if (task.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to modify this task' });
+    }
+
+    const updatedTask = await prisma.careTask.update({
+      where: { id: taskId },
+      data: { completed }
+    }).catch(async (error) => {
+      // If update fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.update({
+        where: { id: taskId },
+        data: { completed }
+      });
+    });
+
+    res.json(updatedTask);
+  } catch (error) {
+    console.error('Update care task error:', error);
+    res.status(500).json({ message: 'Failed to update care task' });
+  }
+});
+
 // Get all insurance information for a cat
 app.get('/api/cats/:catId/insurance', authenticateToken, async (req, res) => {
   try {
@@ -864,6 +1042,86 @@ app.delete('/api/insurance/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// GET a single care task by ID
+app.get('/api/caretasks/:id', authenticateToken, async (req, res) => {
+  try {
+    const taskId = parseInt(req.params.id);
+    
+    // Retrieve the task with associated cat data
+    const task = await prisma.careTask.findUnique({
+      where: { id: taskId },
+      include: { cat: true }
+    }).catch(async (error) => {
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.findUnique({
+        where: { id: taskId },
+        include: { cat: true }
+      });
+    });
+    
+    if (!task) {
+      return res.status(404).json({ message: 'Care task not found' });
+    }
+    
+    // Verify that the task belongs to a cat owned by the authenticated user
+    if (task.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to view this task' });
+    }
+    
+    res.json(task);
+  } catch (error) {
+    console.error('Error fetching care task:', error);
+    res.status(500).json({ message: 'Server error while fetching care task' });
+  }
+});
+
+// Delete a care task
+app.delete('/api/caretasks/:id', authenticateToken, async (req, res) => {
+  try {
+    const taskId = parseInt(req.params.id);
+
+    // Check if the task exists and belongs to a cat owned by the current user
+    const task = await prisma.careTask.findUnique({
+      where: { id: taskId },
+      include: { cat: true }
+    }).catch(async (error) => {
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.findUnique({
+        where: { id: taskId },
+        include: { cat: true }
+      });
+    });
+
+    if (!task) {
+      return res.status(404).json({ message: 'Care task not found' });
+    }
+
+    if (task.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to delete this task' });
+    }
+
+    await prisma.careTask.delete({
+      where: { id: taskId }
+    }).catch(async (error) => {
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.delete({
+        where: { id: taskId }
+      });
+    });
+
+    res.json({ message: 'Care task deleted successfully' });
+  } catch (error) {
+    console.error('Delete care task error:', error);
+    res.status(500).json({ message: 'Failed to delete care task' });
+  }
+});
+
 // Calendar subscription endpoint with improved error handling
 app.get('/api/calendar.ics', async (req, res) => {
   try {
@@ -884,7 +1142,16 @@ app.get('/api/calendar.ics', async (req, res) => {
     // Fetch all cats for the authenticated user
     const cats = await prisma.cat.findMany({ 
       where: { ownerId: payload.userId },
-      include: { healthRecords: true } // Include health records
+      include: { 
+        healthRecords: true,
+        careTasks: {
+          where: {
+            date: {
+              gte: new Date()
+            }
+          }
+        }
+      }
     }).catch(async (error) => {
       // If query fails, try reconnecting
       console.error('Database query error, trying to reconnect:', error);
@@ -892,7 +1159,16 @@ app.get('/api/calendar.ics', async (req, res) => {
       
       return await prisma.cat.findMany({
         where: { ownerId: payload.userId },
-        include: { healthRecords: true }
+        include: { 
+          healthRecords: true,
+          careTasks: {
+            where: {
+              date: {
+                gte: new Date()
+              }
+            }
+          }
+        }
       });
     });
 
@@ -945,6 +1221,20 @@ app.get('/api/calendar.ics', async (req, res) => {
               description: record.description || `Health record for ${cat.name}`
             });
           }
+        });
+      }
+      
+      // Include all care tasks
+      if (cat.careTasks && Array.isArray(cat.careTasks)) {
+        cat.careTasks.forEach(task => {
+          const taskDate = new Date(task.date);
+          calendar.createEvent({
+            start: taskDate,
+            end: new Date(taskDate.getTime() + 24 * 60 * 60 * 1000),
+            allDay: true,
+            summary: `${task.title}`,
+            description: `${task.type} care task for ${cat.name}`
+          });
         });
       }
     });
