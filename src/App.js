@@ -129,7 +129,6 @@ function App() {
               <DashboardPage />
             </ProtectedRoute>
           } />
-          
           {/* Default route */}
           <Route path="/" element={<Navigate to="/cats" replace />} />
           

@@ -2,13 +2,23 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const bcryptjs = require('bcryptjs'); // Use bcryptjs for better compatibility
+const bcryptjs = require('bcryptjs'); 
 const { PrismaClient } = require('@prisma/client');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const ical = require('ical-generator').default; // Changed import method
-const defaultImageUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23F8F9FA'/%3E%3Ctext x='200' y='150' font-family='Arial' font-size='24' fill='%23DEE2E6' text-anchor='middle' dominant-baseline='middle'%3ECarPhoto%3C/text%3E%3C/svg%3E";
+const ical = require('ical-generator').default;
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+// default image if photo not working
+const defaultImageUrl = "https://placehold.co/400x300?text=Cat+Photo";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // Initialize Prisma client with logging for easier debugging
 const prisma = new PrismaClient({
@@ -60,14 +70,27 @@ app.use((req, res, next) => {
 // Basic settings
 app.use(express.json());
 
-// Simplified file handling for serverless environment
-const storage = multer.memoryStorage();  // Use memory storage instead of disk
+// setting up cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'cat-health-tracker',
+    format: async (req, file) => 'jpg',
+    public_id: (req, file) => `cat-${Date.now()}`
+  }
+});
+
+// Using cloudinary
 const upload = multer({ 
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: function(req, file, cb) {
     console.log("Upload file info:", file);
-    cb(null, true);
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error(' photo file only! '), false);
+    }
   }
 });
 
@@ -293,12 +316,14 @@ app.get('/api/cats/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Create a cat with placeholder image
+// Create a cat with Cloudinary upload
 app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res) => {
   try {
     const { name, breed, age, weight } = req.body;
     
-    const imageUrl = defaultImageUrl;
+    const imageUrl = req.file ? req.file.path : defaultImageUrl;
+    
+    console.log("Saving image URL:", imageUrl); // For debugging
 
     const cat = await prisma.cat.create({
       data: {
@@ -334,7 +359,7 @@ app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res
   }
 });
 
-// Update cat information
+// Update cat information with Cloudinary upload
 app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, res) => {
   try {
     const { name, breed, age, weight } = req.body;
@@ -361,8 +386,10 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
       return res.status(403).json({ message: 'Not authorized to modify this cat' });
     }
 
-    // Keep existing image or use placeholder
-    const imageUrl = existingCat.imageUrl || defaultImageUrl;
+    const imageUrl = req.file ? req.file.path : existingCat.imageUrl;
+
+    // For debugging
+    console.log("Updating image URL:", imageUrl); 
 
     const updatedCat = await prisma.cat.update({
       where: { id: catId },
@@ -397,8 +424,22 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
   }
 });
 
-// Add a health record for a cat
-app.post('/api/cats/:catId/records', authenticateToken, upload.single('file'), async (req, res) => {
+const fileStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'cat-health-records',
+    format: async (req, file) => 'auto',
+    public_id: (req, file) => `record-${Date.now()}`
+  }
+});
+
+const uploadFile = multer({ 
+  storage: fileStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+// Add a health record for a cat with file upload
+app.post('/api/cats/:catId/records', authenticateToken, uploadFile.single('file'), async (req, res) => {
   try {
     const { type, date, description, notes } = req.body;
     const catId = parseInt(req.params.catId);
@@ -424,8 +465,7 @@ app.post('/api/cats/:catId/records', authenticateToken, upload.single('file'), a
       return res.status(403).json({ message: 'Not authorized to add records for this cat' });
     }
 
-    // For file uploads, use a placeholder file URL
-    const fileUrl = req.file ? "https://placehold.co/100x100?text=File" : null;
+    const fileUrl = req.file ? req.file.path : null;
 
     const record = await prisma.healthRecord.create({
       data: {
@@ -543,8 +583,8 @@ app.get('/api/records/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Update a health record
-app.put('/api/records/:id', authenticateToken, upload.single('file'), async (req, res) => {
+// Update a health record with file upload
+app.put('/api/records/:id', authenticateToken, uploadFile.single('file'), async (req, res) => {
   try {
     const { type, date, description, notes } = req.body;
     const recordId = parseInt(req.params.id);
@@ -573,10 +613,9 @@ app.put('/api/records/:id', authenticateToken, upload.single('file'), async (req
       return res.status(403).json({ message: 'Not authorized to modify this record' });
     }
 
-    // Keep existing file URL or use a placeholder if a new file is uploaded
     let fileUrl = record.fileUrl;
     if (req.file) {
-      fileUrl = "https://placehold.co/100x100?text=File";
+      fileUrl = req.file.path;
     }
 
     const updatedRecord = await prisma.healthRecord.update({
@@ -703,8 +742,8 @@ app.post('/api/cats/:catId/caretasks', authenticateToken, async (req, res) => {
     const task = await prisma.careTask.create({
       data: {
         title,
-        type, // daily, monthly, annual
-        taskType, // litter, water, play, etc.
+        type, 
+        taskType, 
         date: new Date(date),
         icon,
         completed: false,
