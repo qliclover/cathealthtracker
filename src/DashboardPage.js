@@ -102,7 +102,7 @@ function DashboardPage() {
     
     cats.forEach(cat => {
       // Vaccination reminder (annual)
-      const vaccineDate = new Date();
+      const vaccineDate = new Date(now);
       vaccineDate.setFullYear(vaccineDate.getFullYear() + 1);
       tasks.push({
         id: `vaccine-${cat.id}`,
@@ -114,7 +114,7 @@ function DashboardPage() {
       });
       
       // Checkup reminder (quarterly)
-      const checkupDate = new Date();
+      const checkupDate = new Date(now);
       checkupDate.setMonth(checkupDate.getMonth() + 3);
       tasks.push({
         id: `checkup-${cat.id}`,
@@ -126,7 +126,7 @@ function DashboardPage() {
       });
       
       // Monthly tasks
-      const groomingDate = new Date();
+      const groomingDate = new Date(now);
       groomingDate.setMonth(groomingDate.getMonth() + 1);
       tasks.push({
         id: `grooming-${cat.id}`,
