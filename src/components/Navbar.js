@@ -52,11 +52,6 @@ function Navbar() {
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/todos">
-                    <i className="bi bi-check2-square me-1"></i>Health Tasks
-                  </Link>
-                </li>
-                <li className="nav-item">
                   <button 
                     className="nav-link btn btn-link" 
                     onClick={handleLogout}
