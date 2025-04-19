@@ -230,28 +230,28 @@ function DashboardPage() {
                   <li className="nav-item">
                     <button 
                       className={`nav-link ${activeMealTab === 'first' ? 'active' : ''}`} 
-                      onClick={() => setActiveMealTab('morning')}
+                      onClick={() => setActiveMealTab('first')}
                     >
                       <i className="bi bi-sunrise me-1"></i>
-                      Morning
+                      First
                     </button>
                   </li>
                   <li className="nav-item">
                     <button 
                       className={`nav-link ${activeMealTab === 'second' ? 'active' : ''}`} 
-                      onClick={() => setActiveMealTab('noon')}
+                      onClick={() => setActiveMealTab('second')}
                     >
                       <i className="bi bi-sun me-1"></i>
-                      Noon
+                      Second
                     </button>
                   </li>
                   <li className="nav-item">
                     <button 
                       className={`nav-link ${activeMealTab === 'third' ? 'active' : ''}`} 
-                      onClick={() => setActiveMealTab('evening')}
+                      onClick={() => setActiveMealTab('third')}
                     >
                       <i className="bi bi-moon me-1"></i>
-                      Evening
+                      Third
                     </button>
                   </li>
                 </ul>
