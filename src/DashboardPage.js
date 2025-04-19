@@ -7,6 +7,13 @@ function DashboardPage() {
   const [healthRecords, setHealthRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+  const [mealSchedule, setMealSchedule] = useState([
+    { id: 1, name: 'Morning', time: '12:00 PM', food: 'Raw', amount: '2oz' },
+    { id: 2, name: 'Noon', time: '2:30 PM', food: 'Raw', amount: '2oz' },
+    { id: 3, name: 'Evening', time: '8:00 PM', food: 'Dry Raw', amount: '2oz' }
+  ]);
+  const [editingMeal, setEditingMeal] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,6 +79,43 @@ function DashboardPage() {
     
     // Show feedback message
     alert(`Marked ${mealName} meal as fed!`);
+  };
+
+  // Open customize modal
+  const handleCustomizeMealSchedule = () => {
+    setShowCustomizeModal(true);
+  };
+
+  // Close customize modal
+  const handleCloseModal = () => {
+    setShowCustomizeModal(false);
+    setEditingMeal(null);
+  };
+
+  // Edit a meal
+  const handleEditMeal = (meal) => {
+    setEditingMeal({...meal});
+  };
+
+  // Save meal changes
+  const handleSaveMeal = () => {
+    if (!editingMeal) return;
+
+    setMealSchedule(
+      mealSchedule.map(meal => 
+        meal.id === editingMeal.id ? editingMeal : meal
+      )
+    );
+    setEditingMeal(null);
+  };
+
+  // Update meal field
+  const handleMealInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditingMeal({
+      ...editingMeal,
+      [name]: value
+    });
   };
 
   if (loading) {
@@ -224,57 +268,32 @@ function DashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>Morning</td>
-                        <td>12:00 PM</td>
-                        <td>Raw</td>
-                        <td>2oz</td>
-                        <td>
-                          <button 
-                            className="btn btn-sm btn-outline-success"
-                            onClick={() => markAsFed('Morning')}
-                          >
-                            <i className="bi bi-check-circle me-1"></i>
-                            Mark as Fed
-                          </button>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Noon</td>
-                        <td>2:30 PM</td>
-                        <td>Raw</td>
-                        <td>2oz</td>
-                        <td>
-                          <button 
-                            className="btn btn-sm btn-outline-success"
-                            onClick={() => markAsFed('Noon')}
-                          >
-                            <i className="bi bi-check-circle me-1"></i>
-                            Mark as Fed
-                          </button>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Evening</td>
-                        <td>8:00 PM</td>
-                        <td>Dry Raw</td>
-                        <td>2oz</td>
-                        <td>
-                          <button 
-                            className="btn btn-sm btn-outline-success"
-                            onClick={() => markAsFed('Evening')}
-                          >
-                            <i className="bi bi-check-circle me-1"></i>
-                            Mark as Fed
-                          </button>
-                        </td>
-                      </tr>
+                      {mealSchedule.map(meal => (
+                        <tr key={meal.id}>
+                          <td>{meal.name}</td>
+                          <td>{meal.time}</td>
+                          <td>{meal.food}</td>
+                          <td>{meal.amount}</td>
+                          <td>
+                            <button 
+                              className="btn btn-sm btn-outline-success"
+                              onClick={() => markAsFed(meal.name)}
+                            >
+                              <i className="bi bi-check-circle me-1"></i>
+                              Mark as Fed
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
 
                 <div className="d-flex justify-content-between mt-3">
-                  <button className="btn btn-outline-success">
+                  <button 
+                    className="btn btn-outline-success"
+                    onClick={handleCustomizeMealSchedule}
+                  >
                     <i className="bi bi-gear me-2"></i>
                     Customize Meal Schedule
                   </button>
@@ -286,27 +305,113 @@ function DashboardPage() {
               </div>
             </div>
           </div>
-          
-          {/* Navigation Links to Calendar and Health Tasks */}
-          <div className="col-12 mt-4 mb-4">
-            <div className="row g-3">
-              <div className="col-md-6">
-                <Link to="/calendar" className="btn btn-outline-info w-100 h-100 d-flex align-items-center justify-content-center py-3">
-                  <i className="bi bi-calendar-week fs-2 me-3"></i>
-                  <div className="text-start">
-                    <h5 className="mb-1">Health Calendar</h5>
-                    <p className="mb-0 small">View all health events in calendar format</p>
-                  </div>
-                </Link>
+        </div>
+      )}
+
+      {/* Customize Meal Schedule Modal */}
+      {showCustomizeModal && (
+        <div className="modal show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Customize Meal Schedule</h5>
+                <button type="button" className="btn-close" onClick={handleCloseModal}></button>
               </div>
-              <div className="col-md-6">
-                <Link to="/todos" className="btn btn-outline-warning w-100 h-100 d-flex align-items-center justify-content-center py-3">
-                  <i className="bi bi-check2-square fs-2 me-3"></i>
-                  <div className="text-start">
-                    <h5 className="mb-1">Health Tasks</h5>
-                    <p className="mb-0 small">Manage upcoming health tasks and reminders</p>
+              <div className="modal-body">
+                {editingMeal ? (
+                  <div className="mb-3">
+                    <div className="row g-3">
+                      <div className="col-md-3">
+                        <label className="form-label">Meal Name</label>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          name="name" 
+                          value={editingMeal.name} 
+                          onChange={handleMealInputChange}
+                        />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">Time</label>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          name="time" 
+                          value={editingMeal.time} 
+                          onChange={handleMealInputChange}
+                        />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">Food Type</label>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          name="food" 
+                          value={editingMeal.food} 
+                          onChange={handleMealInputChange}
+                        />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">Amount</label>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          name="amount" 
+                          value={editingMeal.amount} 
+                          onChange={handleMealInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <button 
+                        className="btn btn-primary" 
+                        onClick={handleSaveMeal}
+                      >
+                        Save Changes
+                      </button>
+                      <button 
+                        className="btn btn-outline-secondary ms-2" 
+                        onClick={() => setEditingMeal(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                </Link>
+                ) : (
+                  <table className="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Meal</th>
+                        <th>Time</th>
+                        <th>Food Type</th>
+                        <th>Amount</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mealSchedule.map(meal => (
+                        <tr key={meal.id}>
+                          <td>{meal.name}</td>
+                          <td>{meal.time}</td>
+                          <td>{meal.food}</td>
+                          <td>{meal.amount}</td>
+                          <td>
+                            <button 
+                              className="btn btn-sm btn-outline-primary" 
+                              onClick={() => handleEditMeal(meal)}
+                            >
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Close</button>
+                <button type="button" className="btn btn-primary">Save Changes</button>
               </div>
             </div>
           </div>
