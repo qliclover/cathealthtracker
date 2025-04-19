@@ -13,8 +13,26 @@ function DashboardPage() {
     { id: 2, name: 'Noon', time: '2:30 PM', food: 'Raw', amount: '2oz' },
     { id: 3, name: 'Evening', time: '8:00 PM', food: 'Dry Raw', amount: '2oz' }
   ]);
-  const [editingMeal, setEditingMeal] = useState(null);
-  const navigate = useNavigate();
+
+  // Daily care tasks
+  const [dailyTasks, setDailyTasks] = useState([
+    { id: 'task-1', title: 'Clean Litter Box', completed: false, icon: 'trash' },
+    { id: 'task-2', title: 'Fresh Water', completed: false, icon: 'droplet' },
+    { id: 'task-3', title: 'Brush Teeth', completed: false, icon: 'brush' },
+    { id: 'task-4', title: 'Play Time', completed: false, icon: 'controller' }
+  ]);
+
+    const [editingMeal, setEditingMeal] = useState(null);
+    const navigate = useNavigate();
+
+  // Toggle task completion
+    const toggleTaskComplete = (id) => {
+        setDailyTasks(
+        dailyTasks.map(task => 
+            task.id === id ? { ...task, completed: !task.completed } : task
+        )
+        );
+    };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -246,7 +264,51 @@ function DashboardPage() {
             </div>
           </div>
           
-          {/* Daily Meal Timetable - 简化版 */}
+        {/* Daily Care Tasks */}
+        <div className="col-12 mb-4">
+            <div className="card">
+              <div className="card-header bg-warning bg-opacity-10">
+                <h4 className="mb-0 text-warning">
+                  <i className="bi bi-check2-circle me-2"></i>
+                  Daily Care Tasks
+                </h4>
+              </div>
+              <div className="card-body">
+                {dailyTasks.length === 0 ? (
+                  <p className="text-muted">No daily tasks yet.</p>
+                ) : (
+                  <ul className="list-group">
+                    {dailyTasks.map(task => (
+                      <li 
+                        key={task.id}
+                        className={`list-group-item d-flex justify-content-between align-items-center ${
+                          task.completed ? 'list-group-item-success' : ''
+                        }`}
+                      >
+                        <div>
+                          <i className={`bi bi-${task.icon} me-2`}></i>
+                          <span className={task.completed ? 'text-decoration-line-through' : ''}>
+                            {task.title}
+                          </span>
+                        </div>
+                        <button
+                          className={`btn btn-sm ${task.completed ? 'btn-outline-success' : 'btn-success'}`}
+                          onClick={() => toggleTaskComplete(task.id)}
+                        >
+                          {task.completed ? 'Done ✓' : 'Mark Done'}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="mt-3 text-center">
+                  <Link to="/todos" className="btn btn-outline-warning">View All Tasks</Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Daily Meal Timetable */}
           <div className="col-12">
             <div className="card">
               <div className="card-header bg-success bg-opacity-10">
