@@ -7,7 +7,8 @@ function DashboardPage() {
   const [healthRecords, setHealthRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+  const [showCustomizeMealModal, setShowCustomizeMealModal] = useState(false);
+  const [showCustomizeTaskModal, setShowCustomizeTaskModal] = useState(false);
   const [mealSchedule, setMealSchedule] = useState([
     { id: 1, name: 'Morning', time: '12:00 PM', food: 'Raw', amount: '2oz' },
     { id: 2, name: 'Noon', time: '2:30 PM', food: 'Raw', amount: '2oz' },
@@ -21,18 +22,19 @@ function DashboardPage() {
     { id: 'task-3', title: 'Brush Teeth', completed: false, icon: 'brush' },
     { id: 'task-4', title: 'Play Time', completed: false, icon: 'controller' }
   ]);
-
-    const [editingMeal, setEditingMeal] = useState(null);
-    const navigate = useNavigate();
+  
+  const [editingMeal, setEditingMeal] = useState(null);
+  const [newTask, setNewTask] = useState({ title: '', icon: 'check-circle' });
+  const navigate = useNavigate();
 
   // Toggle task completion
-    const toggleTaskComplete = (id) => {
-        setDailyTasks(
-        dailyTasks.map(task => 
-            task.id === id ? { ...task, completed: !task.completed } : task
-        )
-        );
-    };
+  const toggleTaskComplete = (id) => {
+    setDailyTasks(
+      dailyTasks.map(task => 
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+    );
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -99,15 +101,26 @@ function DashboardPage() {
     alert(`Marked ${mealName} meal as fed!`);
   };
 
-  // Open customize modal
+  // Open customize meal modal
   const handleCustomizeMealSchedule = () => {
-    setShowCustomizeModal(true);
+    setShowCustomizeMealModal(true);
   };
 
-  // Close customize modal
-  const handleCloseModal = () => {
-    setShowCustomizeModal(false);
+  // Close customize meal modal
+  const handleCloseMealModal = () => {
+    setShowCustomizeMealModal(false);
     setEditingMeal(null);
+  };
+
+  // Open customize task modal
+  const handleCustomizeTasks = () => {
+    setShowCustomizeTaskModal(true);
+  };
+
+  // Close customize task modal
+  const handleCloseTaskModal = () => {
+    setShowCustomizeTaskModal(false);
+    setNewTask({ title: '', icon: 'check-circle' });
   };
 
   // Edit a meal
@@ -127,11 +140,40 @@ function DashboardPage() {
     setEditingMeal(null);
   };
 
+  // Add new task
+  const handleAddTask = () => {
+    if (!newTask.title.trim()) return;
+
+    const task = {
+      id: `task-${Date.now()}`,
+      title: newTask.title,
+      icon: newTask.icon,
+      completed: false
+    };
+
+    setDailyTasks([...dailyTasks, task]);
+    setNewTask({ title: '', icon: 'check-circle' });
+  };
+
+  // Delete task
+  const handleDeleteTask = (id) => {
+    setDailyTasks(dailyTasks.filter(task => task.id !== id));
+  };
+
   // Update meal field
   const handleMealInputChange = (e) => {
     const { name, value } = e.target;
     setEditingMeal({
       ...editingMeal,
+      [name]: value
+    });
+  };
+
+  // Update new task field
+  const handleNewTaskChange = (e) => {
+    const { name, value } = e.target;
+    setNewTask({
+      ...newTask,
       [name]: value
     });
   };
@@ -264,18 +306,25 @@ function DashboardPage() {
             </div>
           </div>
           
-        {/* Daily Care Tasks */}
-        <div className="col-12 mb-4">
+          {/* Daily Care Tasks */}
+          <div className="col-12 mb-4">
             <div className="card">
-              <div className="card-header bg-warning bg-opacity-10">
+              <div className="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
                 <h4 className="mb-0 text-warning">
                   <i className="bi bi-check2-circle me-2"></i>
                   Daily Care Tasks
                 </h4>
+                <button 
+                  className="btn btn-sm btn-outline-warning"
+                  onClick={handleCustomizeTasks}
+                >
+                  <i className="bi bi-pencil-square me-1"></i>
+                  Customize Tasks
+                </button>
               </div>
               <div className="card-body">
                 {dailyTasks.length === 0 ? (
-                  <p className="text-muted">No daily tasks yet.</p>
+                  <p className="text-muted">No daily tasks yet. Click 'Customize Tasks' to add some.</p>
                 ) : (
                   <ul className="list-group">
                     {dailyTasks.map(task => (
@@ -301,13 +350,10 @@ function DashboardPage() {
                     ))}
                   </ul>
                 )}
-                <div className="mt-3 text-center">
-                  <Link to="/todos" className="btn btn-outline-warning">View All Tasks</Link>
-                </div>
               </div>
             </div>
           </div>
-
+          
           {/* Daily Meal Timetable */}
           <div className="col-12">
             <div className="card">
@@ -371,13 +417,13 @@ function DashboardPage() {
       )}
 
       {/* Customize Meal Schedule Modal */}
-      {showCustomizeModal && (
+      {showCustomizeMealModal && (
         <div className="modal show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Customize Meal Schedule</h5>
-                <button type="button" className="btn-close" onClick={handleCloseModal}></button>
+                <button type="button" className="btn-close" onClick={handleCloseMealModal}></button>
               </div>
               <div className="modal-body">
                 {editingMeal ? (
@@ -472,8 +518,90 @@ function DashboardPage() {
                 )}
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Close</button>
+                <button type="button" className="btn btn-secondary" onClick={handleCloseMealModal}>Close</button>
                 <button type="button" className="btn btn-primary">Save Changes</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customize Tasks Modal */}
+      {showCustomizeTaskModal && (
+        <div className="modal show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Customize Daily Tasks</h5>
+                <button type="button" className="btn-close" onClick={handleCloseTaskModal}></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-4">
+                  <h6>Add New Task</h6>
+                  <div className="row g-3 align-items-end">
+                    <div className="col-md-8">
+                      <label className="form-label">Task Title</label>
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        name="title" 
+                        value={newTask.title} 
+                        onChange={handleNewTaskChange}
+                        placeholder="Enter task name"
+                      />
+                    </div>
+                    <div className="col-md-2">
+                      <label className="form-label">Icon</label>
+                      <select 
+                        className="form-select"
+                        name="icon" 
+                        value={newTask.icon} 
+                        onChange={handleNewTaskChange}
+                      >
+                        <option value="check-circle">Check</option>
+                        <option value="trash">Trash</option>
+                        <option value="droplet">Water</option>
+                        <option value="brush">Brush</option>
+                        <option value="controller">Play</option>
+                        <option value="heart">Health</option>
+                        <option value="shield">Protection</option>
+                      </select>
+                    </div>
+                    <div className="col-md-2">
+                      <button 
+                        className="btn btn-primary w-100" 
+                        onClick={handleAddTask}
+                      >
+                        Add Task
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <hr />
+                
+                <h6>Current Tasks</h6>
+                <ul className="list-group">
+                  {dailyTasks.map(task => (
+                    <li key={task.id} className="list-group-item d-flex justify-content-between align-items-center">
+                      <div>
+                        <i className={`bi bi-${task.icon} me-2`}></i>
+                        {task.title}
+                      </div>
+                      <button 
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleDeleteTask(task.id)}
+                      >
+                        <i className="bi bi-trash me-1"></i>
+                        Delete
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={handleCloseTaskModal}>Close</button>
+                <button type="button" className="btn btn-primary" onClick={handleCloseTaskModal}>Save Changes</button>
               </div>
             </div>
           </div>
