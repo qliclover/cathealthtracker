@@ -229,7 +229,7 @@ function DashboardPage() {
                 <ul className="nav nav-tabs mb-3">
                   <li className="nav-item">
                     <button 
-                      className={`nav-link ${activeMealTab === 'morning' ? 'active' : ''}`} 
+                      className={`nav-link ${activeMealTab === 'first' ? 'active' : ''}`} 
                       onClick={() => setActiveMealTab('morning')}
                     >
                       <i className="bi bi-sunrise me-1"></i>
@@ -238,7 +238,7 @@ function DashboardPage() {
                   </li>
                   <li className="nav-item">
                     <button 
-                      className={`nav-link ${activeMealTab === 'noon' ? 'active' : ''}`} 
+                      className={`nav-link ${activeMealTab === 'second' ? 'active' : ''}`} 
                       onClick={() => setActiveMealTab('noon')}
                     >
                       <i className="bi bi-sun me-1"></i>
@@ -247,7 +247,7 @@ function DashboardPage() {
                   </li>
                   <li className="nav-item">
                     <button 
-                      className={`nav-link ${activeMealTab === 'evening' ? 'active' : ''}`} 
+                      className={`nav-link ${activeMealTab === 'third' ? 'active' : ''}`} 
                       onClick={() => setActiveMealTab('evening')}
                     >
                       <i className="bi bi-moon me-1"></i>
