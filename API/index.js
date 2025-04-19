@@ -179,8 +179,7 @@ app.post('/api/register', async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      process.env.JWT_SECRET
     );
 
     res.status(201).json({
