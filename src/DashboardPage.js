@@ -7,21 +7,7 @@ function DashboardPage() {
   const [healthRecords, setHealthRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeMealTab, setActiveMealTab] = useState('first');
   const navigate = useNavigate();
-
-  // Sample meal timetable data - replace with actual data from API later
-  const mealTimetable = {
-    first: [
-      { time: '12:00 PM', food: 'raw', amount: '2oz' }
-    ],
-    second: [
-      { time: '2:30 PM', food: 'raw', amount: '2oz' }
-    ],
-    third: [
-      { time: '8:00 PM', food: 'Dry raw', amount: '2oz' }
-    ]
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -80,12 +66,12 @@ function DashboardPage() {
   }, [navigate]);
   
   // Mark meal as fed
-  const markAsFed = (mealTime, index) => {
+  const markAsFed = (mealName) => {
     // Add actual API call here to update feeding status
-    console.log(`Marked ${mealTime} meal at index ${index} as fed`);
+    console.log(`Marked ${mealName} meal as fed`);
     
     // Show feedback message
-    alert(`Marked ${mealTimetable[mealTime][index].food} at ${mealTimetable[mealTime][index].time} as fed!`);
+    alert(`Marked ${mealName} meal as fed!`);
   };
 
   if (loading) {
@@ -216,7 +202,7 @@ function DashboardPage() {
             </div>
           </div>
           
-          {/* Daily Meal Timetable */}
+          {/* Daily Meal Timetable - 简化版 */}
           <div className="col-12">
             <div className="card">
               <div className="card-header bg-success bg-opacity-10">
@@ -226,40 +212,11 @@ function DashboardPage() {
                 </h4>
               </div>
               <div className="card-body">
-                <ul className="nav nav-tabs mb-3">
-                  <li className="nav-item">
-                    <button 
-                      className={`nav-link ${activeMealTab === 'first' ? 'active' : ''}`} 
-                      onClick={() => setActiveMealTab('first')}
-                    >
-                      <i className="bi bi-sunrise me-1"></i>
-                      First
-                    </button>
-                  </li>
-                  <li className="nav-item">
-                    <button 
-                      className={`nav-link ${activeMealTab === 'second' ? 'active' : ''}`} 
-                      onClick={() => setActiveMealTab('second')}
-                    >
-                      <i className="bi bi-sun me-1"></i>
-                      Second
-                    </button>
-                  </li>
-                  <li className="nav-item">
-                    <button 
-                      className={`nav-link ${activeMealTab === 'third' ? 'active' : ''}`} 
-                      onClick={() => setActiveMealTab('third')}
-                    >
-                      <i className="bi bi-moon me-1"></i>
-                      Third
-                    </button>
-                  </li>
-                </ul>
-
                 <div className="table-responsive">
                   <table className="table table-bordered table-hover">
                     <thead className="table-light">
                       <tr>
+                        <th>Meal</th>
                         <th>Time</th>
                         <th>Food Type</th>
                         <th>Amount</th>
@@ -267,22 +224,51 @@ function DashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {mealTimetable[activeMealTab].map((meal, index) => (
-                        <tr key={index}>
-                          <td>{meal.time}</td>
-                          <td>{meal.food}</td>
-                          <td>{meal.amount}</td>
-                          <td>
-                            <button 
-                              className="btn btn-sm btn-outline-success"
-                              onClick={() => markAsFed(activeMealTab, index)}
-                            >
-                              <i className="bi bi-check-circle me-1"></i>
-                              Mark as Fed
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      <tr>
+                        <td>Morning</td>
+                        <td>12:00 PM</td>
+                        <td>Raw</td>
+                        <td>2oz</td>
+                        <td>
+                          <button 
+                            className="btn btn-sm btn-outline-success"
+                            onClick={() => markAsFed('Morning')}
+                          >
+                            <i className="bi bi-check-circle me-1"></i>
+                            Mark as Fed
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Noon</td>
+                        <td>2:30 PM</td>
+                        <td>Raw</td>
+                        <td>2oz</td>
+                        <td>
+                          <button 
+                            className="btn btn-sm btn-outline-success"
+                            onClick={() => markAsFed('Noon')}
+                          >
+                            <i className="bi bi-check-circle me-1"></i>
+                            Mark as Fed
+                          </button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Evening</td>
+                        <td>8:00 PM</td>
+                        <td>Dry Raw</td>
+                        <td>2oz</td>
+                        <td>
+                          <button 
+                            className="btn btn-sm btn-outline-success"
+                            onClick={() => markAsFed('Evening')}
+                          >
+                            <i className="bi bi-check-circle me-1"></i>
+                            Mark as Fed
+                          </button>
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -297,6 +283,30 @@ function DashboardPage() {
                     View Feeding History
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Navigation Links to Calendar and Health Tasks */}
+          <div className="col-12 mt-4 mb-4">
+            <div className="row g-3">
+              <div className="col-md-6">
+                <Link to="/calendar" className="btn btn-outline-info w-100 h-100 d-flex align-items-center justify-content-center py-3">
+                  <i className="bi bi-calendar-week fs-2 me-3"></i>
+                  <div className="text-start">
+                    <h5 className="mb-1">Health Calendar</h5>
+                    <p className="mb-0 small">View all health events in calendar format</p>
+                  </div>
+                </Link>
+              </div>
+              <div className="col-md-6">
+                <Link to="/todos" className="btn btn-outline-warning w-100 h-100 d-flex align-items-center justify-content-center py-3">
+                  <i className="bi bi-check2-square fs-2 me-3"></i>
+                  <div className="text-start">
+                    <h5 className="mb-1">Health Tasks</h5>
+                    <p className="mb-0 small">Manage upcoming health tasks and reminders</p>
+                  </div>
+                </Link>
               </div>
             </div>
           </div>
