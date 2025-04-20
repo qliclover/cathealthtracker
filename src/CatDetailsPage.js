@@ -1,6 +1,6 @@
 // src/CatDetailsPage.js
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from './config';
 
 function CatDetailsPage() {
@@ -185,16 +185,11 @@ function CatDetailsPage() {
               <p><strong>Weight:</strong> {cat.weight} kg</p>
               {cat.birthdate && (
                 <p>
-                  <strong>Birthdate:</strong>{' '}
-                  {new Date(cat.birthdate).toLocaleDateString()}{' '}
-                  <span className="badge bg-primary ms-2">
-                    {calculateAge(cat.birthdate)}
-                  </span>
+                  <strong>Birthdate:</strong> {new Date(cat.birthdate).toLocaleDateString()}{' '}
+                  <span className="badge bg-primary ms-2">{calculateAge(cat.birthdate)}</span>
                 </p>
               )}
-              {cat.description && (
-                <p><strong>Description:</strong> {cat.description}</p>
-              )}
+              {cat.description && <p><strong>Description:</strong> {cat.description}</p>}
             </div>
           </div>
 
@@ -245,11 +240,12 @@ function CatDetailsPage() {
                           {policy.premium != null && (
                             <p className="mb-1"><strong>Premium:</strong> ${policy.premium.toFixed(2)}</p>
                           )}
-                          {policy.coverage && (
-                            <p className="mb-1"><strong>Coverage:</strong> {policy.coverage}</p>
-                          )}
+                          {policy.coverage && <p className="mb-1"><strong>Coverage:</strong> {policy.coverage}</p>}
                         </div>
-                        <button className="btn btn-sm btn-outline-secondary" onClick={() => handleEditInsurance(policy.id)}>
+                        <button
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={() => handleEditInsurance(policy.id)}
+                        >
                           <i className="bi bi-pencil me-1"></i>Edit
                         </button>
                       </div>
@@ -280,18 +276,14 @@ function CatDetailsPage() {
                       <div className="d-flex justify-content-between align-items-start">
                         <div>
                           <div className="mb-1">
-                            <span className={`badge bg-info`}>
-                              {record.type}
-                            </span>
+                            <span className="badge bg-info">{record.type}</span>
                           </div>
                           <small className="text-muted">
                             <i className="bi bi-calendar3 me-1"></i>
                             {new Date(record.date).toLocaleDateString()}
                           </small>
                           <p className="mt-1 mb-1">
-                            {expandedRecords[record.id]
-                              ? record.description
-                              : truncate(record.description, 100)}
+                            {expandedRecords[record.id] ? record.description : truncate(record.description, 100)}
                             {record.description.length > 100 && (
                               <button className="btn btn-link p-0 ms-2" onClick={() => toggleExpand(record.id)}>
                                 {expandedRecords[record.id] ? 'Show less' : 'Read more'}
@@ -300,19 +292,26 @@ function CatDetailsPage() {
                           </p>
                           {record.notes && (
                             <small className="text-muted">
-                              <i className="bi bi-journal-text me-1"></i>
-                              Notes: {record.notes}
+                              <i className="bi bi-journal-text me-1"></i>Notes: {record.notes}
                             </small>
                           )}
                           {record.fileUrl && (
                             <div className="mt-2">
-                              <a href={record.fileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-info">
+                              <a
+                                href={record.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-sm btn-outline-info"
+                              >
                                 <i className="bi bi-file-earmark me-1"></i>View Attachment
                               </a>
                             </div>
                           )}
                         </div>
-                        <button className="btn btn-sm btn-outline-secondary" onClick={() => handleEditRecord(record.id)}>
+                        <button
+                          className="btn btn-sm btn-outline-secondary"
+                          onClick={() => handleEditRecord(record.id)}
+                        >
                           <i className="bi bi-pencil me-1"></i>Edit
                         </button>
                       </div>
