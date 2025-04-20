@@ -363,17 +363,28 @@ app.get('/api/cats/:id', authenticateToken, async (req, res) => {
 // Create a cat with Cloudinary upload
 app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res) => {
   try {
-    const { name, breed, age, weight, birthdate } = req.body;
+    const { name, breed, weight, birthdate } = req.body;
     
     const imageUrl = req.file ? req.file.path : defaultImageUrl;
-    
-    console.log("Saving image URL:", imageUrl); // For debugging
+
+    // age calculator
+    let age = null;
+    if (birthdate) {
+      const today = new Date();
+      const birth = new Date(birthdate);
+      age = today.getFullYear() - birth.getFullYear();
+      const monthDiff = today.getMonth() - birth.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+    }
 
     const cat = await prisma.cat.create({
       data: {
         name,
         breed,
-        age: age ? parseInt(age) : null,
+        age,
         weight: weight ? parseFloat(weight) : null,
         birthdate: birthdate ? new Date(birthdate) : null,
         imageUrl,

@@ -253,21 +253,6 @@ function EditCatPage() {
                 </div>
 
                 <div className="mb-3">
-                  <label htmlFor="age" className="form-label">Age (years)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    id="age"
-                    name="age"
-                    value={formData.age}
-                    onChange={handleChange}
-                    min="0"
-                    step="0.1"
-                    required
-                  />
-                </div>
-
-                <div className="mb-3">
                   <label htmlFor="weight" className="form-label">Weight (kg)</label>
                   <input
                     type="number"

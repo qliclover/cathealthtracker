@@ -180,21 +180,6 @@ function AddCatPage() {
                 </div>
 
                 <div className="mb-3">
-                  <label htmlFor="age" className="form-label">Age (years)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    id="age"
-                    name="age"
-                    value={formData.age}
-                    onChange={handleChange}
-                    min="0"
-                    step="0.1"
-                    required
-                  />
-                </div>
-
-                <div className="mb-3">
                   <label htmlFor="birthdate" className="form-label">Birthdate</label>
                   <input
                     type="date"
