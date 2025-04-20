@@ -19,7 +19,8 @@ const CAT_ENDPOINTS = {
   GET_CATS: `${API_BASE_URL}/cats`,
   GET_CAT: `${API_BASE_URL}/cats`,
   CREATE_CAT: `${API_BASE_URL}/cats`,
-  UPDATE_CAT: `${API_BASE_URL}/cats`
+  UPDATE_CAT: `${API_BASE_URL}/cats`,
+  DELETE_CAT: `${BASE_URL}/api/cats`
 };
 
 // Health Record endpoints
