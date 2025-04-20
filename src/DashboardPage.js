@@ -9,28 +9,34 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Control the "Customize Tasks" modal
-  const [showCustomizeTaskModal, setShowCustomizeTaskModal] = useState(false);
+  // --- Meal timetable state ---
+  const [mealSchedule, setMealSchedule] = useState([
+    { id: 1, name: 'Morning', time: '12:00 PM', food: 'Raw', amount: '2oz', completed: false },
+    { id: 2, name: 'Noon',    time: '2:30 PM',  food: 'Raw', amount: '2oz', completed: false },
+    { id: 3, name: 'Evening', time: '8:00 PM',  food: 'Dry Raw', amount: '2oz', completed: false }
+  ]);
 
-  // Load tasks from localStorage (or empty array)
+  // Mark a meal as fed / undo
+  const markAsFed = (id) => {
+    setMealSchedule(ms =>
+      ms.map(m => m.id === id ? { ...m, completed: !m.completed } : m)
+    );
+  };
+
+  // --- Tasks modal & state ---
+  const [showCustomizeTaskModal, setShowCustomizeTaskModal] = useState(false);
   const [dailyTasks, setDailyTasks] = useState(() => {
     const stored = localStorage.getItem('dailyTasks');
     if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        localStorage.removeItem('dailyTasks');
-      }
+      try { return JSON.parse(stored); }
+      catch { localStorage.removeItem('dailyTasks'); }
     }
     return [];
   });
-
-  // Persist tasks whenever they change
   useEffect(() => {
     localStorage.setItem('dailyTasks', JSON.stringify(dailyTasks));
   }, [dailyTasks]);
 
-  // New-task form state, now with startDate & optional endDate
   const [newTask, setNewTask] = useState({
     title: '',
     catId: '',
@@ -40,51 +46,38 @@ function DashboardPage() {
     endDate: ''
   });
 
-  const navigate = useNavigate();
-
-  // Toggle a task's completed flag
   const toggleTaskComplete = (id) => {
-    setDailyTasks(tasks =>
-      tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t)
+    setDailyTasks(ts =>
+      ts.map(t => t.id === id ? { ...t, completed: !t.completed } : t)
     );
   };
 
-  // Add the new task
   const handleAddTask = () => {
     if (!newTask.title.trim() || !newTask.catId) return;
-    const task = {
-      id: `task-${Date.now()}`,
-      ...newTask,
-      completed: false
-    };
-    setDailyTasks(tasks => [...tasks, task]);
+    const task = { id: `task-${Date.now()}`, ...newTask, completed: false };
+    setDailyTasks(ts => [...ts, task]);
     setShowCustomizeTaskModal(false);
-    // Reset title but keep other values for convenience
     setNewTask(prev => ({ ...prev, title: '' }));
   };
 
-  // Delete a task
   const handleDeleteTask = (id) => {
-    setDailyTasks(tasks => tasks.filter(t => t.id !== id));
+    setDailyTasks(ts => ts.filter(t => t.id !== id));
   };
 
-  // Update newTask form fields
   const handleNewTaskChange = (e) => {
     const { name, value } = e.target;
     setNewTask(prev => ({ ...prev, [name]: value }));
   };
 
-  // Fetch cats and recent health records
+  const navigate = useNavigate();
+
+  // Fetch cats & health records
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-          return;
-        }
+        if (!token) { navigate('/login'); return; }
 
-        // Fetch cats
         const catsRes = await fetch(API_ENDPOINTS.GET_CATS, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -92,7 +85,6 @@ function DashboardPage() {
         const catsData = await catsRes.json();
         setCats(catsData);
 
-        // Fetch up to 5 recent health records across all cats
         const recs = [];
         for (const cat of catsData) {
           const rRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${cat.id}/records`, {
@@ -105,7 +97,6 @@ function DashboardPage() {
         }
         recs.sort((a, b) => new Date(b.date) - new Date(a.date));
         setHealthRecords(recs.slice(0, 5));
-
       } catch (e) {
         setError(e.message);
       } finally {
@@ -130,7 +121,7 @@ function DashboardPage() {
 
   return (
     <div className="container mt-4">
-      {/* Header */}
+      {/* Dashboard Header */}
       <div className="row mb-4">
         <div className="col">
           <h1 className="mb-0">Dashboard</h1>
@@ -148,9 +139,7 @@ function DashboardPage() {
         <div className="col-12">
           <div className="card">
             <div className="card-header bg-primary bg-opacity-10">
-              <h4 className="mb-0 text-primary">
-                <i className="bi bi-house me-2"></i>My Cats
-              </h4>
+              <h4 className="mb-0 text-primary"><i className="bi bi-house me-2"></i>My Cats</h4>
             </div>
             <div className="card-body">
               {cats.length === 0 ? (
@@ -199,9 +188,7 @@ function DashboardPage() {
         <div className="col-12">
           <div className="card">
             <div className="card-header bg-info bg-opacity-10">
-              <h4 className="mb-0 text-info">
-                <i className="bi bi-journal-medical me-2"></i>Recent Health Records
-              </h4>
+              <h4 className="mb-0 text-info"><i className="bi bi-journal-medical me-2"></i>Recent Health Records</h4>
             </div>
             <div className="card-body">
               {healthRecords.length === 0 ? (
@@ -233,13 +220,8 @@ function DashboardPage() {
         <div className="col-12">
           <div className="card">
             <div className="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
-              <h4 className="mb-0 text-warning">
-                <i className="bi bi-check2-circle me-2"></i>Daily Care Tasks
-              </h4>
-              <button
-                className="btn btn-sm btn-outline-warning"
-                onClick={() => setShowCustomizeTaskModal(true)}
-              >
+              <h4 className="mb-0 text-warning"><i className="bi bi-check2-circle me-2"></i>Daily Care Tasks</h4>
+              <button className="btn btn-sm btn-outline-warning" onClick={() => setShowCustomizeTaskModal(true)}>
                 <i className="bi bi-pencil-square me-1"></i>Customize Tasks
               </button>
             </div>
@@ -256,9 +238,7 @@ function DashboardPage() {
                       }`}
                     >
                       <div>
-                        <span className={task.completed ? 'text-decoration-line-through' : ''}>
-                          {task.title}
-                        </span>
+                        <span className={task.completed ? 'text-decoration-line-through' : ''}>{task.title}</span>
                         {task.repeatType !== 'none' && (
                           <span className="badge bg-info ms-2">
                             {task.repeatInterval > 1 ? `Every ${task.repeatInterval} ` : 'Every '}
@@ -266,22 +246,16 @@ function DashboardPage() {
                           </span>
                         )}
                         <span className="badge bg-secondary ms-2">{task.startDate}</span>
-                        {task.endDate && (
-                          <span className="badge bg-secondary ms-2">until {task.endDate}</span>
-                        )}
+                        {task.endDate && <span className="badge bg-secondary ms-2">until {task.endDate}</span>}
                         {task.catId === 'all' ? (
                           <span className="badge bg-secondary ms-2">All Cats</span>
                         ) : (
-                          <span className="badge bg-secondary ms-2">
-                            {cats.find(c => c.id === task.catId)?.name}
-                          </span>
+                          <span className="badge bg-secondary ms-2">{cats.find(c => c.id === task.catId)?.name}</span>
                         )}
                       </div>
                       <div>
                         <button
-                          className={`btn btn-sm ${
-                            task.completed ? 'btn-outline-success' : 'btn-success'
-                          } me-2`}
+                          className={`btn btn-sm ${task.completed ? 'btn-outline-success' : 'btn-success'} me-2`}
                           onClick={() => toggleTaskComplete(task.id)}
                         >
                           {task.completed ? 'Done ✓' : 'Mark Done'}
@@ -302,13 +276,53 @@ function DashboardPage() {
         </div>
       </div>
 
+      {/* Daily Meal Timetable */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="card">
+            <div className="card-header bg-success bg-opacity-10">
+              <h4 className="mb-0 text-success"><i className="bi bi-clock-history me-2"></i>Daily Meal Timetable</h4>
+            </div>
+            <div className="card-body">
+              <div className="table-responsive">
+                <table className="table table-bordered table-hover">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Meal</th>
+                      <th>Time</th>
+                      <th>Food Type</th>
+                      <th>Amount</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mealSchedule.map(meal => (
+                      <tr key={meal.id} className={meal.completed ? 'table-success' : ''}>
+                        <td><span className={meal.completed ? 'text-decoration-line-through' : ''}>{meal.name}</span></td>
+                        <td><span className={meal.completed ? 'text-decoration-line-through' : ''}>{meal.time}</span></td>
+                        <td><span className={meal.completed ? 'text-decoration-line-through' : ''}>{meal.food}</span></td>
+                        <td><span className={meal.completed ? 'text-decoration-line-through' : ''}>{meal.amount}</span></td>
+                        <td>
+                          <button
+                            className={`btn btn-sm ${meal.completed ? 'btn-outline-secondary' : 'btn-success'}`}
+                            onClick={() => markAsFed(meal.id)}
+                          >
+                            {meal.completed ? 'Undo' : 'Mark as Fed'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Customize Tasks Modal */}
       {showCustomizeTaskModal && (
-        <div
-          className="modal show d-block"
-          tabIndex="-1"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-        >
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
@@ -339,9 +353,7 @@ function DashboardPage() {
                       <option value="">Select Cat</option>
                       <option value="all">All Cats</option>
                       {cats.map(cat => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
                       ))}
                     </select>
                   </div>
@@ -403,10 +415,7 @@ function DashboardPage() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowCustomizeTaskModal(false)}
-                >
+                <button className="btn btn-secondary" onClick={() => setShowCustomizeTaskModal(false)}>
                   Close
                 </button>
                 <button
