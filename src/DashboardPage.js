@@ -3,19 +3,22 @@ import { Link, useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from './config';
 
 function DashboardPage() {
+  // State for storing cats, health records, and UI states
   const [cats, setCats] = useState([]);
   const [healthRecords, setHealthRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCustomizeMealModal, setShowCustomizeMealModal] = useState(false);
   const [showCustomizeTaskModal, setShowCustomizeTaskModal] = useState(false);
+  
+  // Sample meal schedule data - would be replaced with API data in production
   const [mealSchedule, setMealSchedule] = useState([
     { id: 1, name: 'Morning', time: '12:00 PM', food: 'Raw', amount: '2oz' },
     { id: 2, name: 'Noon', time: '2:30 PM', food: 'Raw', amount: '2oz' },
     { id: 3, name: 'Evening', time: '8:00 PM', food: 'Dry Raw', amount: '2oz' }
   ]);
 
-  // Daily care tasks
+  // Daily care tasks - would be fetched from API in production
   const [dailyTasks, setDailyTasks] = useState([
     { id: 'task-1', title: 'Clean Litter Box', completed: false, icon: 'trash' },
     { id: 'task-2', title: 'Fresh Water', completed: false, icon: 'droplet' },
@@ -23,6 +26,7 @@ function DashboardPage() {
     { id: 'task-4', title: 'Play Time', completed: false, icon: 'controller' }
   ]);
   
+  // State for editing meals and creating new tasks
   const [editingMeal, setEditingMeal] = useState(null);
   const [newTask, setNewTask] = useState({
     title: '',
@@ -34,7 +38,7 @@ function DashboardPage() {
   });  
   const navigate = useNavigate();
 
-  // Toggle task completion
+  // Toggle task completion status
   const toggleTaskComplete = (id) => {
     setDailyTasks(
       dailyTasks.map(task => 
@@ -43,6 +47,7 @@ function DashboardPage() {
     );
   };
 
+  // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -108,34 +113,38 @@ function DashboardPage() {
     alert(`Marked ${mealName} meal as fed!`);
   };
 
-  // Open customize meal modal
+  // Modal handlers for meal schedule customization
   const handleCustomizeMealSchedule = () => {
     setShowCustomizeMealModal(true);
   };
 
-  // Close customize meal modal
   const handleCloseMealModal = () => {
     setShowCustomizeMealModal(false);
     setEditingMeal(null);
   };
 
-  // Open customize task modal
+  // Modal handlers for task customization
   const handleCustomizeTasks = () => {
     setShowCustomizeTaskModal(true);
   };
 
-  // Close customize task modal
   const handleCloseTaskModal = () => {
     setShowCustomizeTaskModal(false);
-    setNewTask({ title: '', icon: 'check-circle' });
+    setNewTask({
+      title: '',
+      icon: 'check-circle',
+      catId: '',
+      repeatType: 'none',
+      repeatInterval: 1,
+      endDate: ''
+    });
   };
 
-  // Edit a meal
+  // Meal editing functions
   const handleEditMeal = (meal) => {
     setEditingMeal({...meal});
   };
 
-  // Save meal changes
   const handleSaveMeal = () => {
     if (!editingMeal) return;
 
@@ -147,7 +156,7 @@ function DashboardPage() {
     setEditingMeal(null);
   };
 
-  // Add new task
+  // Add new task with recurring options
   const handleAddTask = () => {
     if (!newTask.title.trim() || !newTask.catId) return;
   
@@ -162,23 +171,26 @@ function DashboardPage() {
       endDate: newTask.endDate
     };
 
+    // Here you could add API call to save task to server
+
     setDailyTasks([...dailyTasks, task]);
     setNewTask({
-        title: '',
-        icon: 'check-circle',
-        catId: newTask.catId,
-        repeatType: 'none',
-        repeatInterval: 1,
-        endDate: ''
+      title: '',
+      icon: 'check-circle',
+      catId: newTask.catId, // Keep the cat selection for convenience
+      repeatType: 'none',
+      repeatInterval: 1,
+      endDate: ''
     });
   };
 
   // Delete task
   const handleDeleteTask = (id) => {
     setDailyTasks(dailyTasks.filter(task => task.id !== id));
+    // Here you could add API call to delete task from server
   };
 
-  // Update meal field
+  // Input change handlers
   const handleMealInputChange = (e) => {
     const { name, value } = e.target;
     setEditingMeal({
@@ -187,7 +199,6 @@ function DashboardPage() {
     });
   };
 
-  // Update new task field
   const handleNewTaskChange = (e) => {
     const { name, value } = e.target;
     setNewTask({
@@ -196,6 +207,7 @@ function DashboardPage() {
     });
   };
 
+  // Loading and error states
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
@@ -357,6 +369,14 @@ function DashboardPage() {
                           <span className={task.completed ? 'text-decoration-line-through' : ''}>
                             {task.title}
                           </span>
+                          {task.repeatType && task.repeatType !== 'none' && (
+                            <span className="badge bg-info ms-2">
+                              {task.repeatInterval > 1 ? `Every ${task.repeatInterval} ` : 'Every '}
+                              {task.repeatType === 'daily' ? 'day' : 
+                              task.repeatType === 'weekly' ? 'week' : 
+                              task.repeatType === 'monthly' ? 'month' : 'year'}
+                            </span>
+                          )}
                         </div>
                         <button
                           className={`btn btn-sm ${task.completed ? 'btn-outline-success' : 'btn-success'}`}
@@ -434,164 +454,115 @@ function DashboardPage() {
         </div>
       )}
 
-    {showCustomizeTaskModal && (
-    <div className="modal show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
-        <div className="modal-dialog modal-lg">
-        <div className="modal-content">
-            <div className="modal-header">
-            <h5 className="modal-title">Customize Daily Tasks</h5>
-            <button type="button" className="btn-close" onClick={handleCloseTaskModal}></button>
-            </div>
-            <div className="modal-body">
-            <div className="mb-4">
-                <h6>Add New Task</h6>
-                <div className="row g-3">
-                <div className="col-md-6">
-                    <label className="form-label">Task Title</label>
-                    <input 
-                    type="text" 
-                    className="form-control" 
-                    name="title" 
-                    value={newTask.title} 
-                    onChange={handleNewTaskChange}
-                    placeholder="Enter task name"
-                    />
-                </div>
-                <div className="col-md-3">
-                    <label className="form-label">Icon</label>
-                    <select 
-                    className="form-select"
-                    name="icon" 
-                    value={newTask.icon} 
-                    onChange={handleNewTaskChange}
-                    >
-                    <option value="check-circle">Check</option>
-                    <option value="trash">Trash</option>
-                    <option value="droplet">Water</option>
-                    <option value="brush">Brush</option>
-                    <option value="controller">Play</option>
-                    <option value="heart">Health</option>
-                    <option value="shield">Protection</option>
-                    </select>
-                </div>
-                <div className="col-md-3">
-                    <label className="form-label">Cat</label>
-                    <select
-                    className="form-select"
-                    name="catId"
-                    value={newTask.catId || ''}
-                    onChange={handleNewTaskChange}
-                    required
-                    >
-                    <option value="">Select Cat</option>
-                    {cats.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                    </select>
-                </div>
-                </div>
-                
-                {/* Recurring task options */}
-                <div className="row mt-3">
-                <div className="col-md-3">
-                    <label className="form-label">Repeat</label>
-                    <select
-                    className="form-select"
-                    name="repeatType"
-                    value={newTask.repeatType || 'none'}
-                    onChange={handleNewTaskChange}
-                    >
-                    <option value="none">Never</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                    </select>
-                </div>
-                
-                {newTask.repeatType && newTask.repeatType !== 'none' && (
-                    <>
-                    <div className="col-md-3">
-                        <label className="form-label">Repeat Every</label>
-                        <div className="input-group">
-                        <input
-                            type="number"
-                            className="form-control"
-                            name="repeatInterval"
-                            value={newTask.repeatInterval || 1}
-                            onChange={handleNewTaskChange}
-                            min="1"
+      {/* Customize Meal Schedule Modal */}
+      {showCustomizeMealModal && (
+        <div className="modal show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Customize Meal Schedule</h5>
+                <button type="button" className="btn-close" onClick={handleCloseMealModal}></button>
+              </div>
+              <div className="modal-body">
+                {editingMeal ? (
+                  <div className="mb-3">
+                    <div className="row g-3">
+                      <div className="col-md-3">
+                        <label className="form-label">Meal Name</label>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          name="name" 
+                          value={editingMeal.name} 
+                          onChange={handleMealInputChange}
                         />
-                        <span className="input-group-text">
-                            {newTask.repeatType === 'daily' ? 'days' : 
-                            newTask.repeatType === 'weekly' ? 'weeks' : 
-                            newTask.repeatType === 'monthly' ? 'months' : 'years'}
-                        </span>
-                        </div>
-                    </div>
-                    
-                    <div className="col-md-3">
-                        <label className="form-label">End Date (Optional)</label>
-                        <input
-                        type="date"
-                        className="form-control"
-                        name="endDate"
-                        value={newTask.endDate || ''}
-                        onChange={handleNewTaskChange}
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">Time</label>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          name="time" 
+                          value={editingMeal.time} 
+                          onChange={handleMealInputChange}
                         />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">Food Type</label>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          name="food" 
+                          value={editingMeal.food} 
+                          onChange={handleMealInputChange}
+                        />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">Amount</label>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          name="amount" 
+                          value={editingMeal.amount} 
+                          onChange={handleMealInputChange}
+                        />
+                      </div>
                     </div>
-                    </>
+                    <div className="mt-3">
+                      <button 
+                        className="btn btn-primary" 
+                        onClick={handleSaveMeal}
+                      >
+                        Save Changes
+                      </button>
+                      <button 
+                        className="btn btn-outline-secondary ms-2" 
+                        onClick={() => setEditingMeal(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <table className="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Meal</th>
+                        <th>Time</th>
+                        <th>Food Type</th>
+                        <th>Amount</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mealSchedule.map(meal => (
+                        <tr key={meal.id}>
+                          <td>{meal.name}</td>
+                          <td>{meal.time}</td>
+                          <td>{meal.food}</td>
+                          <td>{meal.amount}</td>
+                          <td>
+                            <button 
+                              className="btn btn-sm btn-outline-primary" 
+                              onClick={() => handleEditMeal(meal)}
+                            >
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
-                
-                <div className="col-md-3 d-flex align-items-end">
-                    <button 
-                    className="btn btn-primary w-100" 
-                    onClick={handleAddTask}
-                    disabled={!newTask.title.trim() || !newTask.catId}
-                    >
-                    Add Task
-                    </button>
-                </div>
-                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={handleCloseMealModal}>Close</button>
+                <button type="button" className="btn btn-primary" onClick={handleCloseMealModal}>Save Changes</button>
+              </div>
             </div>
-            
-            <hr />
-            
-            <h6>Current Tasks</h6>
-            <ul className="list-group">
-                {dailyTasks.map(task => (
-                <li key={task.id} className="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                    <i className={`bi bi-${task.icon} me-2`}></i>
-                    {task.title}
-                    {task.repeatType && task.repeatType !== 'none' && (
-                        <span className="badge bg-info ms-2">
-                        {task.repeatInterval > 1 ? `Every ${task.repeatInterval} ` : 'Every '}
-                        {task.repeatType === 'daily' ? 'day' : 
-                        task.repeatType === 'weekly' ? 'week' : 
-                        task.repeatType === 'monthly' ? 'month' : 'year'}
-                        </span>
-                    )}
-                    </div>
-                    <button 
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={() => handleDeleteTask(task.id)}
-                    >
-                    <i className="bi bi-trash me-1"></i>
-                    Delete
-                    </button>
-                </li>
-                ))}
-            </ul>
-            </div>
-            <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={handleCloseTaskModal}>Close</button>
-            <button type="button" className="btn btn-primary" onClick={handleCloseTaskModal}>Save Changes</button>
-            </div>
+          </div>
         </div>
-        </div>
-    </div>
-    )}
+      )}
 
       {/* Customize Tasks Modal */}
       {showCustomizeTaskModal && (
@@ -605,8 +576,8 @@ function DashboardPage() {
               <div className="modal-body">
                 <div className="mb-4">
                   <h6>Add New Task</h6>
-                  <div className="row g-3 align-items-end">
-                    <div className="col-md-8">
+                  <div className="row g-3">
+                    <div className="col-md-6">
                       <label className="form-label">Task Title</label>
                       <input 
                         type="text" 
@@ -617,7 +588,7 @@ function DashboardPage() {
                         placeholder="Enter task name"
                       />
                     </div>
-                    <div className="col-md-2">
+                    <div className="col-md-3">
                       <label className="form-label">Icon</label>
                       <select 
                         className="form-select"
@@ -634,10 +605,80 @@ function DashboardPage() {
                         <option value="shield">Protection</option>
                       </select>
                     </div>
-                    <div className="col-md-2">
+                    <div className="col-md-3">
+                      <label className="form-label">Cat</label>
+                      <select
+                        className="form-select"
+                        name="catId"
+                        value={newTask.catId || ''}
+                        onChange={handleNewTaskChange}
+                        required
+                      >
+                        <option value="">Select Cat</option>
+                        {cats.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {/* Recurring task options */}
+                  <div className="row mt-3">
+                    <div className="col-md-3">
+                      <label className="form-label">Repeat</label>
+                      <select
+                        className="form-select"
+                        name="repeatType"
+                        value={newTask.repeatType || 'none'}
+                        onChange={handleNewTaskChange}
+                      >
+                        <option value="none">Never</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                      </select>
+                    </div>
+                    
+                    {newTask.repeatType && newTask.repeatType !== 'none' && (
+                      <>
+                        <div className="col-md-3">
+                          <label className="form-label">Repeat Every</label>
+                          <div className="input-group">
+                            <input
+                              type="number"
+                              className="form-control"
+                              name="repeatInterval"
+                              value={newTask.repeatInterval || 1}
+                              onChange={handleNewTaskChange}
+                              min="1"
+                            />
+                            <span className="input-group-text">
+                              {newTask.repeatType === 'daily' ? 'days' : 
+                              newTask.repeatType === 'weekly' ? 'weeks' : 
+                              newTask.repeatType === 'monthly' ? 'months' : 'years'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="col-md-3">
+                          <label className="form-label">End Date (Optional)</label>
+                          <input
+                            type="date"
+                            className="form-control"
+                            name="endDate"
+                            value={newTask.endDate || ''}
+                            onChange={handleNewTaskChange}
+                          />
+                        </div>
+                      </>
+                    )}
+                    
+                    <div className="col-md-3 d-flex align-items-end">
                       <button 
                         className="btn btn-primary w-100" 
                         onClick={handleAddTask}
+                        disabled={!newTask.title.trim() || !newTask.catId}
                       >
                         Add Task
                       </button>
@@ -654,6 +695,14 @@ function DashboardPage() {
                       <div>
                         <i className={`bi bi-${task.icon} me-2`}></i>
                         {task.title}
+                        {task.repeatType && task.repeatType !== 'none' && (
+                          <span className="badge bg-info ms-2">
+                            {task.repeatInterval > 1 ? `Every ${task.repeatInterval} ` : 'Every '}
+                            {task.repeatType === 'daily' ? 'day' : 
+                            task.repeatType === 'weekly' ? 'week' : 
+                            task.repeatType === 'monthly' ? 'month' : 'year'}
+                          </span>
+                        )}
                       </div>
                       <button 
                         className="btn btn-sm btn-outline-danger"
