@@ -1,732 +1,1456 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { API_ENDPOINTS } from './config';
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const bcryptjs = require('bcryptjs'); 
+const { PrismaClient } = require('@prisma/client');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+const ical = require('ical-generator').default;
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-function DashboardPage() {
-  // State for storing cats and health records
-  const [cats, setCats] = useState([]);
-  const [healthRecords, setHealthRecords] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  
-  // Modals visibility state
-  const [showCustomizeMealModal, setShowCustomizeMealModal] = useState(false);
-  const [showCustomizeTaskModal, setShowCustomizeTaskModal] = useState(false);
-  
-  // Sample meal schedule data
-  const [mealSchedule, setMealSchedule] = useState([
-    { id: 1, name: 'Morning', time: '12:00 PM', food: 'Raw', amount: '2oz' },
-    { id: 2, name: 'Noon', time: '2:30 PM', food: 'Raw', amount: '2oz' },
-    { id: 3, name: 'Evening', time: '8:00 PM', food: 'Dry Raw', amount: '2oz' }
-  ]);
+// Default image placeholder when cat photo is not available
+const defaultImageUrl = "https://placehold.co/400x300?text=Cat+Photo";
 
-  // Daily care tasks
-  const [dailyTasks, setDailyTasks] = useState([
-    { id: 'task-1', title: 'Clean Litter Box', completed: false, icon: 'trash' },
-    { id: 'task-2', title: 'Fresh Water', completed: false, icon: 'droplet' },
-    { id: 'task-3', title: 'Brush Teeth', completed: false, icon: 'brush' },
-    { id: 'task-4', title: 'Play Time', completed: false, icon: 'controller' }
-  ]);
+// Configure Cloudinary credentials
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Initialize Prisma client with logging for debugging
+const prisma = new PrismaClient({
+  log: ['error', 'warn'],
+});
+
+// Database connection logic with retries
+let connectionRetries = 0;
+const maxRetries = 5;
+
+const connectWithRetry = async () => {
+  try {
+    await prisma.$connect();
+    console.log('Connected to database');
+    connectionRetries = 0;  // Reset retry counter on successful connection
+  } catch (e) {
+    connectionRetries++;
+    console.error(`Database connection attempt ${connectionRetries} failed:`, e);
+    
+    if (connectionRetries < maxRetries) {
+      console.log(`Retrying connection in 5 seconds... (Attempt ${connectionRetries + 1}/${maxRetries})`);
+      
+      // Retry after 5 seconds
+      setTimeout(connectWithRetry, 5000);
+    } else {
+      console.error('Maximum connection retries reached. Please check your database configuration.');
+    }
+  }
+};
+
+// Start connecting to database
+connectWithRetry();
+
+const app = express();
+
+// CORS middleware to ensure all responses have proper headers
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://cathealthtracker.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   
-  // State for editing
-  const [editingMeal, setEditingMeal] = useState(null);
-  const [newTask, setNewTask] = useState({
-    title: '',
-    icon: 'check-circle',
-    catId: '',
-    repeatType: 'none',
-    repeatInterval: 1,
-    endDate: ''
+  if (req.method === 'OPTIONS') {
+    return res.status(204).send();
+  }
+  next();
+});
+
+// Basic settings
+app.use(express.json());
+
+// Configure Cloudinary storage for image uploads
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'cat-health-tracker',
+    format: async (req, file) => 'jpg',
+    public_id: (req, file) => `cat-${Date.now()}`
+  }
+});
+
+// Setup multer middleware for file uploads
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: function(req, file, cb) {
+    console.log("Upload file info:", file);
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only photo files are allowed!'), false);
+    }
+  }
+});
+
+// Root path handler
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Cat Health Tracker API is running',
+    version: '1.0.0',
+    endpoints: {
+      auth: ['/api/register', '/api/login'],
+      cats: ['/api/cats', '/api/cats/:id'],
+      records: ['/api/cats/:catId/records', '/api/records/:id'],
+      insurance: ['/api/cats/:catId/insurance', '/api/insurance/:id'],
+      careTasks: ['/api/cats/:catId/caretasks', '/api/caretasks/:id']
+    }
   });
+});
+
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+  // Skip authentication for OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
   
-  const navigate = useNavigate();
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
-  // Toggle task completion status
-  const toggleTaskComplete = (id) => {
-    setDailyTasks(
-      dailyTasks.map(task => 
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
+  if (!token) {
+    return res.status(401).json({ message: 'Authentication token not provided' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: 'Invalid authentication token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// User registration endpoint
+app.post('/api/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      return null;
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+
+    // Hash password
+    const hashedPassword = await bcryptjs.hash(password, 10);
+
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword
+      }
+    }).catch(async (error) => {
+      // If creation fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      // Retry creation after reconnect
+      return await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword
+        }
+      });
+    });
+
+    // Generate JWT token with no expiration
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET
     );
-  };
 
-  // Fetch cats and health records on component mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-          return;
-        }
+    res.status(201).json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ 
+      message: 'Registration failed, please try again',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    });
+  }
+});
 
-        // Fetch all cats
-        const catsResponse = await fetch(API_ENDPOINTS.GET_CATS, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (!catsResponse.ok) {
-          throw new Error('Failed to fetch cats');
+// User login endpoint
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting and retry
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.user.findUnique({
+        where: { email }
+      });
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Verify password
+    const validPassword = await bcryptjs.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Generate JWT token with no expiration
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Login failed, please try again' });
+  }
+});
+
+// Get all cats for the authenticated user
+app.get('/api/cats', authenticateToken, async (req, res) => {
+  try {
+    // Try to fetch cats with retry logic
+    const cats = await prisma.cat.findMany({
+      where: { ownerId: req.user.userId },
+      orderBy: { createdAt: 'desc' }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      // Retry query after reconnect
+      return await prisma.cat.findMany({
+        where: { ownerId: req.user.userId },
+        orderBy: { createdAt: 'desc' }
+      });
+    });
+    
+    res.json(cats || []);  // Ensure we always return an array
+  } catch (error) {
+    console.error('Get cats error:', error);
+    res.status(500).json({ message: 'Failed to get cat list' });
+  }
+});
+
+// Delete a cat
+app.delete('/api/cats/:id', authenticateToken, async (req, res) => {
+  try {
+    const catId = parseInt(req.params.id);
+
+    // Check if the cat exists and belongs to current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to delete this cat' });
+    }
+
+    // Delete the cat
+    await prisma.cat.delete({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If delete fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.delete({
+        where: { id: catId }
+      });
+    });
+
+    res.json({ message: 'Cat deleted successfully' });
+  } catch (error) {
+    console.error('Delete cat error:', error);
+    res.status(500).json({ message: 'Failed to delete cat' });
+  }
+});
+
+// Get a single cat along with its health records and care tasks
+app.get('/api/cats/:id', authenticateToken, async (req, res) => {
+  try {
+    const cat = await prisma.cat.findUnique({
+      where: { id: parseInt(req.params.id) },
+      include: { 
+        healthRecords: true,
+        insurance: true,
+        careTasks: true
+      }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      // Retry query after reconnect
+      return await prisma.cat.findUnique({
+        where: { id: parseInt(req.params.id) },
+        include: { 
+          healthRecords: true,
+          insurance: true,
+          careTasks: true
         }
-        
-        const catsData = await catsResponse.json();
-        setCats(catsData);
-        
-        // Fetch recent health records for each cat
-        const allRecords = [];
-        for (const cat of catsData) {
-          const recordsResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${cat.id}/records`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          if (recordsResponse.ok) {
-            const records = await recordsResponse.json();
-            if (Array.isArray(records) && records.length > 0) {
-              // Add cat info to each record
-              const recordsWithCatInfo = records.map(record => ({
-                ...record,
-                catName: cat.name,
-                catId: cat.id
-              }));
-              allRecords.push(...recordsWithCatInfo);
+      });
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to access this cat' });
+    }
+
+    res.json(cat);
+  } catch (error) {
+    console.error('Get cat error:', error);
+    res.status(500).json({ message: 'Failed to get cat information' });
+  }
+});
+
+// Create a cat with Cloudinary upload
+app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    const { name, breed, age, weight, birthdate } = req.body;
+    
+    const imageUrl = req.file ? req.file.path : defaultImageUrl;
+    
+    console.log("Saving image URL:", imageUrl); // For debugging
+
+    const cat = await prisma.cat.create({
+      data: {
+        name,
+        breed,
+        age: age ? parseInt(age) : null,
+        weight: weight ? parseFloat(weight) : null,
+        birthdate: birthdate ? new Date(birthdate) : null,
+        imageUrl,
+        ownerId: req.user.userId
+      }
+    }).catch(async (error) => {
+      // If creation fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      // Retry creation after reconnect
+      return await prisma.cat.create({
+        data: {
+          name,
+          breed,
+          age: age ? parseInt(age) : null,
+          weight: weight ? parseFloat(weight) : null,
+          birthdate: birthdate ? new Date(birthdate) : null,
+          imageUrl,
+          ownerId: req.user.userId
+        }
+      });
+    });
+
+    res.status(201).json(cat);
+  } catch (error) {
+    console.error('Create cat error:', error);
+    res.status(500).json({ message: 'Failed to create cat' });
+  }
+});
+
+// Update cat information with Cloudinary upload
+app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    const { name, breed, age, weight, birthdate } = req.body;
+    const catId = parseInt(req.params.id);
+
+    // Check if the cat exists and belongs to current user
+    const existingCat = await prisma.cat.findUnique({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
+    });
+
+    if (!existingCat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (existingCat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to modify this cat' });
+    }
+
+    const imageUrl = req.file ? req.file.path : existingCat.imageUrl;
+
+    // For debugging
+    console.log("Updating image URL:", imageUrl); 
+
+    const updatedCat = await prisma.cat.update({
+      where: { id: catId },
+      data: {
+        name,
+        breed,
+        age: age ? parseInt(age) : null,
+        weight: weight ? parseFloat(weight) : null,
+        birthdate: birthdate ? new Date(birthdate) : existingCat.birthdate,
+        imageUrl
+      }
+    }).catch(async (error) => {
+      // If update fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.update({
+        where: { id: catId },
+        data: {
+          name,
+          breed,
+          age: age ? parseInt(age) : null,
+          weight: weight ? parseFloat(weight) : null,
+          birthdate: birthdate ? new Date(birthdate) : existingCat.birthdate,
+          imageUrl
+        }
+      });
+    });
+
+    res.json(updatedCat);
+  } catch (error) {
+    console.error('Update cat error:', error);
+    res.status(500).json({ message: 'Failed to update cat information' });
+  }
+});
+
+// Configure storage for health record file uploads
+const fileStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'cat-health-records',
+    format: async (req, file) => 'auto',
+    public_id: (req, file) => `record-${Date.now()}`
+  }
+});
+
+const uploadFile = multer({ 
+  storage: fileStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+// Add a health record for a cat with file upload
+app.post('/api/cats/:catId/records', authenticateToken, uploadFile.single('file'), async (req, res) => {
+  try {
+    const { type, date, description, notes } = req.body;
+    const catId = parseInt(req.params.catId);
+
+    // Check if the cat exists and belongs to current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to add records for this cat' });
+    }
+
+    const fileUrl = req.file ? req.file.path : null;
+
+    const record = await prisma.healthRecord.create({
+      data: {
+        type,
+        date: new Date(date),
+        description,
+        notes,
+        fileUrl,
+        catId
+      }
+    }).catch(async (error) => {
+      // If creation fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.healthRecord.create({
+        data: {
+          type,
+          date: new Date(date),
+          description,
+          notes,
+          fileUrl,
+          catId
+        }
+      });
+    });
+
+    res.status(201).json(record);
+  } catch (error) {
+    console.error('Add health record error:', error);
+    res.status(500).json({ message: 'Failed to add health record' });
+  }
+});
+
+// Get health records for a cat
+app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {
+  try {
+    const catId = parseInt(req.params.catId);
+
+    // Check if the cat exists and belongs to the current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to view records for this cat' });
+    }
+
+    const records = await prisma.healthRecord.findMany({
+      where: { catId },
+      orderBy: { date: 'desc' }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.healthRecord.findMany({
+        where: { catId },
+        orderBy: { date: 'desc' }
+      });
+    });
+
+    res.json(records || []);
+  } catch (error) {
+    console.error('Get health records error:', error);
+    res.status(500).json({ message: 'Failed to get health records' });
+  }
+});
+
+// GET a single health record by ID (for editing)
+app.get('/api/records/:id', authenticateToken, async (req, res) => {
+  try {
+    const recordId = parseInt(req.params.id);
+    
+    // Retrieve the health record with the associated cat data
+    const record = await prisma.healthRecord.findUnique({
+      where: { id: recordId },
+      include: { cat: true }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.healthRecord.findUnique({
+        where: { id: recordId },
+        include: { cat: true }
+      });
+    });
+    
+    if (!record) {
+      return res.status(404).json({ message: 'Health record not found' });
+    }
+    
+    // Verify that the record belongs to the authenticated user
+    if (record.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to view this record' });
+    }
+    
+    res.json(record);
+  } catch (error) {
+    console.error('Error fetching health record:', error);
+    res.status(500).json({ message: 'Server error while fetching record' });
+  }
+});
+
+// Update a health record with file upload
+app.put('/api/records/:id', authenticateToken, uploadFile.single('file'), async (req, res) => {
+  try {
+    const { type, date, description, notes } = req.body;
+    const recordId = parseInt(req.params.id);
+
+    // Retrieve the existing record along with the associated cat
+    const record = await prisma.healthRecord.findUnique({
+      where: { id: recordId },
+      include: { cat: true }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.healthRecord.findUnique({
+        where: { id: recordId },
+        include: { cat: true }
+      });
+    });
+
+    if (!record) {
+      return res.status(404).json({ message: 'Health record not found' });
+    }
+
+    // Verify that the record belongs to the authenticated user
+    if (record.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to modify this record' });
+    }
+
+    let fileUrl = record.fileUrl;
+    if (req.file) {
+      fileUrl = req.file.path;
+    }
+
+    const updatedRecord = await prisma.healthRecord.update({
+      where: { id: recordId },
+      data: {
+        type,
+        date: new Date(date),
+        description,
+        notes,
+        fileUrl
+      }
+    }).catch(async (error) => {
+      // If update fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.healthRecord.update({
+        where: { id: recordId },
+        data: {
+          type,
+          date: new Date(date),
+          description,
+          notes,
+          fileUrl
+        }
+      });
+    });
+
+    res.json(updatedRecord);
+  } catch (error) {
+    console.error('Update health record error:', error);
+    res.status(500).json({ message: 'Failed to update health record' });
+  }
+});
+
+// Get all care tasks for a cat
+app.get('/api/cats/:catId/caretasks', authenticateToken, async (req, res) => {
+  try {
+    const catId = parseInt(req.params.catId);
+
+    // Check if the cat exists and belongs to the current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to view tasks for this cat' });
+    }
+
+    // Get today's date at midnight for filtering
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tasks = await prisma.careTask.findMany({
+      where: { 
+        catId,
+        date: {
+          gte: today
+        }
+      },
+      orderBy: { date: 'asc' }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.findMany({
+        where: { 
+          catId,
+          date: {
+            gte: today
+          }
+        },
+        orderBy: { date: 'asc' }
+      });
+    });
+
+    res.json(tasks || []);
+  } catch (error) {
+    console.error('Get care tasks error:', error);
+    res.status(500).json({ message: 'Failed to get care tasks' });
+  }
+});
+
+// Create a care task for a cat with recurring options
+app.post('/api/cats/:catId/caretasks', authenticateToken, async (req, res) => {
+  try {
+    const { title, type, taskType, date, icon, repeatType, repeatInterval, endDate } = req.body;
+    const catId = parseInt(req.params.catId);
+
+    // Check if the cat exists and belongs to the current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to add tasks for this cat' });
+    }
+
+    const task = await prisma.careTask.create({
+      data: {
+        title,
+        type, 
+        taskType, 
+        date: new Date(date),
+        icon,
+        completed: false,
+        repeatType: repeatType || 'none',
+        repeatInterval: repeatInterval ? parseInt(repeatInterval) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        catId
+      }
+    }).catch(async (error) => {
+      // If creation fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.create({
+        data: {
+          title,
+          type,
+          taskType,
+          date: new Date(date),
+          icon,
+          completed: false,
+          repeatType: repeatType || 'none',
+          repeatInterval: repeatInterval ? parseInt(repeatInterval) : null,
+          endDate: endDate ? new Date(endDate) : null,
+          catId
+        }
+      });
+    });
+
+    res.status(201).json(task);
+  } catch (error) {
+    console.error('Add care task error:', error);
+    res.status(500).json({ message: 'Failed to add care task' });
+  }
+});
+
+// Update care task (mark as complete/incomplete)
+app.put('/api/caretasks/:id', authenticateToken, async (req, res) => {
+  try {
+    const { completed, title, type, taskType, date, icon, repeatType, repeatInterval, endDate } = req.body;
+    const taskId = parseInt(req.params.id);
+
+    // Retrieve the task with associated cat data
+    const task = await prisma.careTask.findUnique({
+      where: { id: taskId },
+      include: { cat: true }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.findUnique({
+        where: { id: taskId },
+        include: { cat: true }
+      });
+    });
+
+    if (!task) {
+      return res.status(404).json({ message: 'Care task not found' });
+    }
+
+    // Verify that the task belongs to a cat owned by the authenticated user
+    if (task.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to modify this task' });
+    }
+
+    // Build update data based on provided fields
+    const updateData = {};
+    if (completed !== undefined) updateData.completed = completed;
+    if (title) updateData.title = title;
+    if (type) updateData.type = type;
+    if (taskType) updateData.taskType = taskType;
+    if (date) updateData.date = new Date(date);
+    if (icon) updateData.icon = icon;
+    if (repeatType) updateData.repeatType = repeatType;
+    if (repeatInterval !== undefined) updateData.repeatInterval = parseInt(repeatInterval);
+    if (endDate) updateData.endDate = new Date(endDate);
+
+    const updatedTask = await prisma.careTask.update({
+      where: { id: taskId },
+      data: updateData
+    }).catch(async (error) => {
+      // If update fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.update({
+        where: { id: taskId },
+        data: updateData
+      });
+    });
+
+    res.json(updatedTask);
+  } catch (error) {
+    console.error('Update care task error:', error);
+    res.status(500).json({ message: 'Failed to update care task' });
+  }
+});
+
+// Delete a care task
+app.delete('/api/caretasks/:id', authenticateToken, async (req, res) => {
+  try {
+    const taskId = parseInt(req.params.id);
+
+    // Check if the task exists and belongs to a cat owned by the current user
+    const task = await prisma.careTask.findUnique({
+      where: { id: taskId },
+      include: { cat: true }
+    }).catch(async (error) => {
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.findUnique({
+        where: { id: taskId },
+        include: { cat: true }
+      });
+    });
+
+    if (!task) {
+      return res.status(404).json({ message: 'Care task not found' });
+    }
+
+    if (task.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to delete this task' });
+    }
+
+    await prisma.careTask.delete({
+      where: { id: taskId }
+    }).catch(async (error) => {
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.delete({
+        where: { id: taskId }
+      });
+    });
+
+    res.json({ message: 'Care task deleted successfully' });
+  } catch (error) {
+    console.error('Delete care task error:', error);
+    res.status(500).json({ message: 'Failed to delete care task' });
+  }
+});
+
+// Get all insurance information for a cat
+app.get('/api/cats/:catId/insurance', authenticateToken, async (req, res) => {
+  try {
+    const catId = parseInt(req.params.catId);
+
+    // Check if the cat exists and belongs to the current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to view insurance for this cat' });
+    }
+
+    const insurance = await prisma.insurance.findMany({
+      where: { catId },
+      orderBy: { startDate: 'desc' }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.findMany({
+        where: { catId },
+        orderBy: { startDate: 'desc' }
+      });
+    });
+
+    res.json(insurance || []);
+  } catch (error) {
+    console.error('Get insurance error:', error);
+    res.status(500).json({ message: 'Failed to get insurance information' });
+  }
+});
+
+// Add insurance information for a cat
+app.post('/api/cats/:catId/insurance', authenticateToken, async (req, res) => {
+  try {
+    const { provider, policyNumber, startDate, endDate, coverage, premium } = req.body;
+    const catId = parseInt(req.params.catId);
+
+    // Check if the cat exists and belongs to the current user
+    const cat = await prisma.cat.findUnique({
+      where: { id: catId }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.cat.findUnique({
+        where: { id: catId }
+      });
+    });
+
+    if (!cat) {
+      return res.status(404).json({ message: 'Cat not found' });
+    }
+
+    if (cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to add insurance for this cat' });
+    }
+
+    const insurance = await prisma.insurance.create({
+      data: {
+        provider,
+        policyNumber,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        coverage,
+        premium: premium ? parseFloat(premium) : null,
+        catId
+      }
+    }).catch(async (error) => {
+      // If creation fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.create({
+        data: {
+          provider,
+          policyNumber,
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          coverage,
+          premium: premium ? parseFloat(premium) : null,
+          catId
+        }
+      });
+    });
+
+    res.status(201).json(insurance);
+  } catch (error) {
+    console.error('Add insurance error:', error);
+    res.status(500).json({ message: 'Failed to add insurance information' });
+  }
+});
+
+// GET a single insurance record by ID
+app.get('/api/insurance/:id', authenticateToken, async (req, res) => {
+  try {
+    const insuranceId = parseInt(req.params.id);
+    
+    // Retrieve the insurance with associated cat data
+    const insurance = await prisma.insurance.findUnique({
+      where: { id: insuranceId },
+      include: { cat: true }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.findUnique({
+        where: { id: insuranceId },
+        include: { cat: true }
+      });
+    });
+    
+    if (!insurance) {
+      return res.status(404).json({ message: 'Insurance information not found' });
+    }
+    
+    // Verify that the insurance belongs to a cat owned by the authenticated user
+    if (insurance.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to view this insurance information' });
+    }
+    
+    res.json(insurance);
+  } catch (error) {
+    console.error('Error fetching insurance:', error);
+    res.status(500).json({ message: 'Server error while fetching insurance information' });
+  }
+});
+
+// Update insurance information
+app.put('/api/insurance/:id', authenticateToken, async (req, res) => {
+  try {
+    const { provider, policyNumber, startDate, endDate, coverage, premium } = req.body;
+    const insuranceId = parseInt(req.params.id);
+
+    // Check if the insurance exists and belongs to a cat owned by the current user
+    const insurance = await prisma.insurance.findUnique({
+      where: { id: insuranceId },
+      include: { cat: true }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.findUnique({
+        where: { id: insuranceId },
+        include: { cat: true }
+      });
+    });
+
+    if (!insurance) {
+      return res.status(404).json({ message: 'Insurance information not found' });
+    }
+
+    if (insurance.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to modify this insurance information' });
+    }
+
+    const updatedInsurance = await prisma.insurance.update({
+      where: { id: insuranceId },
+      data: {
+        provider,
+        policyNumber,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        coverage,
+        premium: premium ? parseFloat(premium) : null
+      }
+    }).catch(async (error) => {
+      // If update fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.update({
+        where: { id: insuranceId },
+        data: {
+          provider,
+          policyNumber,
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          coverage,
+          premium: premium ? parseFloat(premium) : null
+        }
+      });
+    });
+
+    res.json(updatedInsurance);
+  } catch (error) {
+    console.error('Update insurance error:', error);
+    res.status(500).json({ message: 'Failed to update insurance information' });
+  }
+});
+
+// Delete insurance information
+app.delete('/api/insurance/:id', authenticateToken, async (req, res) => {
+  try {
+    const insuranceId = parseInt(req.params.id);
+
+    // Check if the insurance exists and belongs to a cat owned by the current user
+    const insurance = await prisma.insurance.findUnique({
+      where: { id: insuranceId },
+      include: { cat: true }
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.findUnique({
+        where: { id: insuranceId },
+        include: { cat: true }
+      });
+    });
+
+    if (!insurance) {
+      return res.status(404).json({ message: 'Insurance information not found' });
+    }
+
+    if (insurance.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to delete this insurance information' });
+    }
+
+    await prisma.insurance.delete({
+      where: { id: insuranceId }
+    }).catch(async (error) => {
+      // If delete fails, try reconnecting
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.insurance.delete({
+        where: { id: insuranceId }
+      });
+    });
+
+    res.json({ message: 'Insurance information deleted successfully' });
+  } catch (error) {
+    console.error('Delete insurance error:', error);
+    res.status(500).json({ message: 'Failed to delete insurance information' });
+  }
+});
+
+// GET a single care task by ID
+app.get('/api/caretasks/:id', authenticateToken, async (req, res) => {
+  try {
+    const taskId = parseInt(req.params.id);
+    
+    // Retrieve the task with associated cat data
+    const task = await prisma.careTask.findUnique({
+      where: { id: taskId },
+      include: { cat: true }
+    }).catch(async (error) => {
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.careTask.findUnique({
+        where: { id: taskId },
+        include: { cat: true }
+      });
+    });
+    
+    if (!task) {
+      return res.status(404).json({ message: 'Care task not found' });
+    }
+    
+    // Verify that the task belongs to a cat owned by the authenticated user
+    if (task.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to view this task' });
+    }
+    
+    res.json(task);
+  } catch (error) {
+    console.error('Error fetching care task:', error);
+    res.status(500).json({ message: 'Server error while fetching care task' });
+  }
+});
+
+// Helper function to get ordinal suffix for numbers (1st, 2nd, 3rd, etc.)
+function getSuffix(num) {
+  const j = num % 10,
+        k = num % 100;
+  if (j == 1 && k != 11) {
+    return "st";
+  }
+  if (j == 2 && k != 12) {
+    return "nd";
+  }
+  if (j == 3 && k != 13) {
+    return "rd";
+  }
+  return "th";
+}
+
+// Calendar subscription endpoint with improved error handling and recurring event support
+app.get('/api/calendar.ics', async (req, res) => {
+  try {
+    // Extract the JWT token from the query string
+    const token = req.query.token;
+    if (!token) {
+      return res.status(401).json({ message: 'Authentication token not provided' });
+    }
+
+    // Verify and decode the JWT
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(403).json({ message: 'Invalid authentication token' });
+    }
+
+    // Fetch all cats for the authenticated user
+    const cats = await prisma.cat.findMany({ 
+      where: { ownerId: payload.userId },
+      include: { 
+        healthRecords: true,
+        careTasks: {
+          where: {
+            date: {
+              gte: new Date()
             }
           }
         }
-        
-        // Sort by date and take most recent 5
-        allRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
-        setHealthRecords(allRecords.slice(0, 5));
-        
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
       }
-    };
-    
-    fetchData();
-  }, [navigate]);
-  
-  // Mark meal as fed
-  const markAsFed = (mealName) => {
-    // Add actual API call here to update feeding status
-    console.log(`Marked ${mealName} meal as fed`);
-    
-    // Show feedback message
-    alert(`Marked ${mealName} meal as fed!`);
-  };
-
-  // Modal handlers for meal customization
-  const handleCustomizeMealSchedule = () => {
-    setShowCustomizeMealModal(true);
-  };
-
-  const handleCloseMealModal = () => {
-    setShowCustomizeMealModal(false);
-    setEditingMeal(null);
-  };
-
-  // Modal handlers for task customization
-  const handleCustomizeTasks = () => {
-    setShowCustomizeTaskModal(true);
-  };
-
-  const handleCloseTaskModal = () => {
-    setShowCustomizeTaskModal(false);
-    setNewTask({
-      title: '',
-      icon: 'check-circle',
-      catId: '',
-      repeatType: 'none',
-      repeatInterval: 1,
-      endDate: ''
-    });
-  };
-
-  // Meal editing handlers
-  const handleEditMeal = (meal) => {
-    setEditingMeal({...meal});
-  };
-
-  const handleSaveMeal = () => {
-    if (!editingMeal) return;
-
-    setMealSchedule(
-      mealSchedule.map(meal => 
-        meal.id === editingMeal.id ? editingMeal : meal
-      )
-    );
-    setEditingMeal(null);
-  };
-
-  // Task management handlers
-  const handleAddTask = () => {
-    if (!newTask.title.trim() || !newTask.catId) return;
-  
-    const task = {
-      id: `task-${Date.now()}`,
-      title: newTask.title,
-      icon: newTask.icon,
-      catId: newTask.catId,
-      completed: false,
-      repeatType: newTask.repeatType,
-      repeatInterval: newTask.repeatInterval,
-      endDate: newTask.endDate
-    };
-
-    // Here an API call could be added to save the task
-
-    setDailyTasks([...dailyTasks, task]);
-    setNewTask({
-      title: '',
-      icon: 'check-circle',
-      catId: newTask.catId, // Keep the cat selection for convenience
-      repeatType: 'none',
-      repeatInterval: 1,
-      endDate: ''
-    });
-  };
-
-  const handleDeleteTask = (id) => {
-    setDailyTasks(dailyTasks.filter(task => task.id !== id));
-    // Here an API call could be added to delete the task
-  };
-
-  // Input change handlers
-  const handleMealInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditingMeal({
-      ...editingMeal,
-      [name]: value
-    });
-  };
-
-  const handleNewTaskChange = (e) => {
-    const { name, value } = e.target;
-    setNewTask({
-      ...newTask,
-      [name]: value
-    });
-  };
-
-  // Loading and error states
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="alert alert-danger" role="alert">
-        {error}
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mt-4">
-      <div className="row mb-4">
-        <div className="col">
-          <h1 className="mb-0">Dashboard</h1>
-          <p className="text-muted">Manage your cats' health and care routines</p>
-        </div>
-        <div className="col-auto">
-          <Link to="/cats/add" className="btn btn-primary">
-            <i className="bi bi-plus-circle me-2"></i>Add Cat
-          </Link>
-        </div>
-      </div>
+    }).catch(async (error) => {
+      // If query fails, try reconnecting
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
       
-      {cats.length === 0 ? (
-        <div className="alert alert-info">
-          <h4 className="alert-heading">Welcome to Cat Health Tracker!</h4>
-          <p>You haven't added any cats yet. Click the "Add Cat" button to get started.</p>
-        </div>
-      ) : (
-        <div className="row">
-          {/* Cats Overview Card */}
-          <div className="col-12 mb-4">
-            <div className="card">
-              <div className="card-header bg-primary bg-opacity-10">
-                <h4 className="mb-0 text-primary">
-                  <i className="bi bi-house me-2"></i>
-                  My Cats
-                </h4>
-              </div>
-              <div className="card-body">
-                <div className="row row-cols-1 row-cols-md-3 g-4">
-                  {cats.map(cat => (
-                    <div key={cat.id} className="col">
-                      <Link to={`/cats/${cat.id}`} className="text-decoration-none">
-                        <div className="card h-100 border-0 shadow-sm">
-                          {cat.imageUrl ? (
-                            <div className="text-center pt-3">
-                              <img 
-                                src={cat.imageUrl} 
-                                alt={cat.name}
-                                style={{ width: 'auto', maxHeight: '150px', objectFit: 'contain', margin: '0 auto' }}
-                                onError={(e) => {
-                                  e.target.onerror = null; 
-                                  e.target.src = "https://placehold.co/400x300?text=Cat+Photo";
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="text-center pt-3">
-                              <img 
-                                src="https://placehold.co/400x300?text=Cat+Photo" 
-                                alt="Default cat"
-                                style={{ width: 'auto', maxHeight: '150px', objectFit: 'contain', margin: '0 auto' }}
-                              />
-                            </div>
-                          )}
-                          <div className="card-body text-center">
-                            <h5 className="card-title mb-1">{cat.name}</h5>
-                            <p className="card-text small text-muted mb-0">{cat.breed}</p>
-                          </div>
-                        </div>
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="text-center mt-3">
-                  <Link to="/cats" className="btn btn-outline-primary">View All Cats</Link>
-                </div>
-              </div>
-            </div>
-          </div>
+      return await prisma.cat.findMany({
+        where: { ownerId: payload.userId },
+        include: { 
+          healthRecords: true,
+          careTasks: {
+            where: {
+              date: {
+                gte: new Date()
+              }
+            }
+          }
+        }
+      });
+    });
+
+    // Create an iCal calendar with safe defaults
+    const calendar = ical({
+      domain: process.env.APP_DOMAIN || 'cathealthtracker.vercel.app',
+      name: 'Cat Health Reminders',
+      timezone: process.env.TIMEZONE || 'UTC',
+      prodId: {
+        company: 'Cat Health Tracker',
+        product: 'Health Reminders'
+      }
+    });
+
+    // Generate events for each cat
+    const now = new Date();
+    cats.forEach(cat => {
+      // Annual vaccination reminder
+      const nextVaccine = new Date(now);
+      nextVaccine.setFullYear(nextVaccine.getFullYear() + 1);
+      calendar.createEvent({
+        start: nextVaccine,
+        end: new Date(nextVaccine.getTime() + 24 * 60 * 60 * 1000), // Next day
+        allDay: true,
+        summary: `Annual vaccination for ${cat.name}`,
+        description: `Reminder: annual vaccination for ${cat.name}.`
+      });
+
+      // Quarterly checkup reminder
+      const nextCheckup = new Date(now);
+      nextCheckup.setMonth(nextCheckup.getMonth() + 3);
+      calendar.createEvent({
+        start: nextCheckup,
+        end: new Date(nextCheckup.getTime() + 24 * 60 * 60 * 1000), // Next day
+        allDay: true,
+        summary: `Quarterly checkup for ${cat.name}`,
+        description: `Reminder: quarterly checkup for ${cat.name}.`
+      });
+
+      // Add birthday event if birthdate exists
+      if (cat.birthdate) {
+        // Get this year's birthday date
+        const birthdate = new Date(cat.birthdate);
+        const thisYearBirthday = new Date(now.getFullYear(), birthdate.getMonth(), birthdate.getDate());
+        
+        // If this year's birthday has already passed, generate next year's birthday
+        if (thisYearBirthday < now) {
+          thisYearBirthday.setFullYear(thisYearBirthday.getFullYear() + 1);
+        }
+        
+        // Calculate age for birthday event
+        const age = thisYearBirthday.getFullYear() - birthdate.getFullYear();
+        
+        // Create birthday event with yearly recurrence
+        calendar.createEvent({
+          start: thisYearBirthday,
+          end: new Date(thisYearBirthday.getTime() + 24 * 60 * 60 * 1000),
+          allDay: true,
+          summary: `${cat.name}'s ${age}${getSuffix(age)} Birthday! 🎂`,
+          description: `${cat.name} turns ${age} today!`,
+          repeating: {
+            freq: 'YEARLY',
+            interval: 1
+          }
+        });
+      }
+
+      // Include all future health records
+      if (cat.healthRecords && Array.isArray(cat.healthRecords)) {
+        cat.healthRecords.forEach(record => {
+          const recordDate = new Date(record.date);
+          if (recordDate > now) { // Only future records
+            calendar.createEvent({
+              start: recordDate,
+              end: new Date(recordDate.getTime() + 24 * 60 * 60 * 1000),
+              allDay: true,
+              summary: `${cat.name}: ${record.type}`,
+              description: record.description || `Health record for ${cat.name}`
+            });
+          }
+        });
+      }
+      
+      // Include all care tasks with repeating support
+      if (cat.careTasks && Array.isArray(cat.careTasks)) {
+        cat.careTasks.forEach(task => {
+          const taskDate = new Date(task.date);
           
-          {/* Recent Health Records */}
-          <div className="col-12 mb-4">
-            <div className="card">
-              <div className="card-header bg-info bg-opacity-10">
-                <h4 className="mb-0 text-info">
-                  <i className="bi bi-journal-medical me-2"></i>
-                  Recent Health Records
-                </h4>
-              </div>
-              <div className="card-body">
-                {healthRecords.length === 0 ? (
-                  <p className="text-muted">No health records yet.</p>
-                ) : (
-                  <div className="list-group">
-                    {healthRecords.map(record => (
-                      <Link 
-                        key={record.id} 
-                        to={`/records/${record.id}/edit`}
-                        className="list-group-item list-group-item-action"
-                      >
-                        <div className="d-flex w-100 justify-content-between">
-                          <h6 className="mb-1">{record.type} - {record.catName}</h6>
-                          <small>{new Date(record.date).toLocaleDateString()}</small>
-                        </div>
-                        <p className="mb-1 small text-truncate">{record.description}</p>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                <div className="text-center mt-3">
-                  <Link to="/calendar" className="btn btn-outline-info">View Health Calendar</Link>
-                </div>
-              </div>
-            </div>
-          </div>
+          // Base event parameters
+          const eventParams = {
+            start: taskDate,
+            end: new Date(taskDate.getTime() + 24 * 60 * 60 * 1000),
+            allDay: true,
+            summary: `${task.title}`,
+            description: `${task.type} care task for ${cat.name}`
+          };
           
-          {/* Daily Care Tasks */}
-          <div className="col-12 mb-4">
-            <div className="card">
-              <div className="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
-                <h4 className="mb-0 text-warning">
-                  <i className="bi bi-check2-circle me-2"></i>
-                  Daily Care Tasks
-                </h4>
-                <button 
-                  className="btn btn-sm btn-outline-warning"
-                  onClick={handleCustomizeTasks}
-                >
-                  <i className="bi bi-pencil-square me-1"></i>
-                  Customize Tasks
-                </button>
-              </div>
-              <div className="card-body">
-                {dailyTasks.length === 0 ? (
-                  <p className="text-muted">No daily tasks yet. Click 'Customize Tasks' to add some.</p>
-                ) : (
-                  <ul className="list-group">
-                    {dailyTasks.map(task => (
-                      <li 
-                        key={task.id}
-                        className={`list-group-item d-flex justify-content-between align-items-center ${
-                          task.completed ? 'list-group-item-success' : ''
-                        }`}
-                      >
-                        <div>
-                          <i className={`bi bi-${task.icon} me-2`}></i>
-                          <span className={task.completed ? 'text-decoration-line-through' : ''}>
-                            {task.title}
-                          </span>
-                          {task.repeatType && task.repeatType !== 'none' && (
-                            <span className="badge bg-info ms-2">
-                              {task.repeatInterval > 1 ? `Every ${task.repeatInterval} ` : 'Every '}
-                              {task.repeatType === 'daily' ? 'day' : 
-                              task.repeatType === 'weekly' ? 'week' : 
-                              task.repeatType === 'monthly' ? 'month' : 'year'}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          className={`btn btn-sm ${task.completed ? 'btn-outline-success' : 'btn-success'}`}
-                          onClick={() => toggleTaskComplete(task.id)}
-                        >
-                          {task.completed ? 'Done ✓' : 'Mark Done'}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          </div>
+          // Add repeating rule if this is a recurring task
+          if (task.repeatType && task.repeatType !== 'none') {
+            const rruleObj = {
+              freq: task.repeatType.toUpperCase(), // DAILY, WEEKLY, MONTHLY, YEARLY
+            };
+            
+            // Add interval if specified (e.g., every 2 weeks)
+            if (task.repeatInterval && task.repeatInterval > 1) {
+              rruleObj.interval = task.repeatInterval;
+            }
+            
+            // Add end date if specified
+            if (task.endDate) {
+              rruleObj.until = new Date(task.endDate);
+            }
+            
+            eventParams.repeating = rruleObj;
+          }
           
-          {/* Daily Meal Timetable */}
-          <div className="col-12">
-            <div className="card">
-              <div className="card-header bg-success bg-opacity-10">
-                <h4 className="mb-0 text-success">
-                  <i className="bi bi-clock-history me-2"></i>
-                  Daily Meal Timetable
-                </h4>
-              </div>
-              <div className="card-body">
-                <div className="table-responsive">
-                  <table className="table table-bordered table-hover">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Meal</th>
-                        <th>Time</th>
-                        <th>Food Type</th>
-                        <th>Amount</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mealSchedule.map(meal => (
-                        <tr key={meal.id}>
-                          <td>{meal.name}</td>
-                          <td>{meal.time}</td>
-                          <td>{meal.food}</td>
-                          <td>{meal.amount}</td>
-                          <td>
-                            <button 
-                              className="btn btn-sm btn-outline-success"
-                              onClick={() => markAsFed(meal.name)}
-                            >
-                              <i className="bi bi-check-circle me-1"></i>
-                              Mark as Fed
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+          // Create the event with properly configured parameters
+          calendar.createEvent(eventParams);
+        });
+      }
+    });
 
-                <div className="d-flex justify-content-between mt-3">
-                  <button 
-                    className="btn btn-outline-success"
-                    onClick={handleCustomizeMealSchedule}
-                  >
-                    <i className="bi bi-gear me-2"></i>
-                    Customize Meal Schedule
-                  </button>
-                  <button className="btn btn-outline-primary">
-                    <i className="bi bi-clock-history me-2"></i>
-                    View Feeding History
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+    // Send the calendar as a .ics file
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="cat-health.ics"');
+    
+    // Use toString method instead of serve for better compatibility
+    res.send(calendar.toString());
+    
+  } catch (error) {
+    console.error('Calendar generation error:', error);
+    res.status(500).json({ message: 'Failed to generate calendar', error: error.message });
+  }
+});
 
-      {/* Customize Meal Schedule Modal */}
-      {showCustomizeMealModal && (
-        <div className="modal show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Customize Meal Schedule</h5>
-                <button type="button" className="btn-close" onClick={handleCloseMealModal}></button>
-              </div>
-              <div className="modal-body">
-                {editingMeal ? (
-                  <div className="mb-3">
-                    <div className="row g-3">
-                      <div className="col-md-3">
-                        <label className="form-label">Meal Name</label>
-                        <input 
-                          type="text" 
-                          className="form-control" 
-                          name="name" 
-                          value={editingMeal.name} 
-                          onChange={handleMealInputChange}
-                        />
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label">Time</label>
-                        <input 
-                          type="text" 
-                          className="form-control" 
-                          name="time" 
-                          value={editingMeal.time} 
-                          onChange={handleMealInputChange}
-                        />
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label">Food Type</label>
-                        <input 
-                          type="text" 
-                          className="form-control" 
-                          name="food" 
-                          value={editingMeal.food} 
-                          onChange={handleMealInputChange}
-                        />
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label">Amount</label>
-                        <input 
-                          type="text" 
-                          className="form-control" 
-                          name="amount" 
-                          value={editingMeal.amount} 
-                          onChange={handleMealInputChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <button 
-                        className="btn btn-primary" 
-                        onClick={handleSaveMeal}
-                      >
-                        Save Changes
-                      </button>
-                      <button 
-                        className="btn btn-outline-secondary ms-2" 
-                        onClick={() => setEditingMeal(null)}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <table className="table table-bordered">
-                    <thead>
-                      <tr>
-                        <th>Meal</th>
-                        <th>Time</th>
-                        <th>Food Type</th>
-                        <th>Amount</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mealSchedule.map(meal => (
-                        <tr key={meal.id}>
-                          <td>{meal.name}</td>
-                          <td>{meal.time}</td>
-                          <td>{meal.food}</td>
-                          <td>{meal.amount}</td>
-                          <td>
-                            <button 
-                              className="btn btn-sm btn-outline-primary" 
-                              onClick={() => handleEditMeal(meal)}
-                            >
-                              Edit
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={handleCloseMealModal}>Close</button>
-                <button type="button" className="btn btn-primary" onClick={handleCloseMealModal}>Save Changes</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+// Ignore favicon requests
+app.get('/favicon.ico', (req, res) => res.sendStatus(204));
 
-      {/* Customize Tasks Modal */}
-      {showCustomizeTaskModal && (
-        <div className="modal show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Customize Daily Tasks</h5>
-                <button type="button" className="btn-close" onClick={handleCloseTaskModal}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-4">
-                  <h6>Add New Task</h6>
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <label className="form-label">Task Title</label>
-                      <input 
-                        type="text" 
-                        className="form-control" 
-                        name="title" 
-                        value={newTask.title} 
-                        onChange={handleNewTaskChange}
-                        placeholder="Enter task name"
-                      />
-                    </div>
-                    <div className="col-md-3">
-                      <label className="form-label">Icon</label>
-                      <select 
-                        className="form-select"
-                        name="icon" 
-                        value={newTask.icon} 
-                        onChange={handleNewTaskChange}
-                      >
-                        <option value="check-circle">Check</option>
-                        <option value="trash">Trash</option>
-                        <option value="droplet">Water</option>
-                        <option value="brush">Brush</option>
-                        <option value="controller">Play</option>
-                        <option value="heart">Health</option>
-                        <option value="shield">Protection</option>
-                      </select>
-                    </div>
-                    <div className="col-md-3">
-                      <label className="form-label">Cat</label>
-                      <select
-                        className="form-select"
-                        name="catId"
-                        value={newTask.catId || ''}
-                        onChange={handleNewTaskChange}
-                        required
-                      >
-                        <option value="">Select Cat</option>
-                        {cats.map(cat => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  
-                  {/* Recurring task options */}
-                  <div className="row mt-3">
-                    <div className="col-md-3">
-                      <label className="form-label">Repeat</label>
-                      <select
-                        className="form-select"
-                        name="repeatType"
-                        value={newTask.repeatType || 'none'}
-                        onChange={handleNewTaskChange}
-                      >
-                        <option value="none">Never</option>
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
-                      </select>
-                    </div>
-                    
-                    {newTask.repeatType && newTask.repeatType !== 'none' && (
-                      <>
-                        <div className="col-md-3">
-                          <label className="form-label">Repeat Every</label>
-                          <div className="input-group">
-                            <input
-                              type="number"
-                              className="form-control"
-                              name="repeatInterval"
-                              value={newTask.repeatInterval || 1}
-                              onChange={handleNewTaskChange}
-                              min="1"
-                            />
-                            <span className="input-group-text">
-                              {newTask.repeatType === 'daily' ? 'days' : 
-                              newTask.repeatType === 'weekly' ? 'weeks' : 
-                              newTask.repeatType === 'monthly' ? 'months' : 'years'}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <div className="col-md-3">
-                          <label className="form-label">End Date (Optional)</label>
-                          <input
-                            type="date"
-                            className="form-control"
-                            name="endDate"
-                            value={newTask.endDate || ''}
-                            onChange={handleNewTaskChange}
-                          />
-                        </div>
-                      </>
-                    )}
-                    
-                    <div className="col-md-3 d-flex align-items-end">
-                      <button 
-                        className="btn btn-primary w-100" 
-                        onClick={handleAddTask}
-                        disabled={!newTask.title.trim() || !newTask.catId}
-                      >
-                        Add Task
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                <hr />
-                
-                <h6>Current Tasks</h6>
-                <ul className="list-group">
-                  {dailyTasks.map(task => (
-                    <li key={task.id} className="list-group-item d-flex justify-content-between align-items-center">
-                      <div>
-                        <i className={`bi bi-${task.icon} me-2`}></i>
-                        {task.title}
-                        {task.repeatType && task.repeatType !== 'none' && (
-                          <span className="badge bg-info ms-2">
-                            {task.repeatInterval > 1 ? `Every ${task.repeatInterval} ` : 'Every '}
-                            {task.repeatType === 'daily' ? 'day' : 
-                            task.repeatType === 'weekly' ? 'week' : 
-                            task.repeatType === 'monthly' ? 'month' : 'year'}
-                          </span>
-                        )}
-                      </div>
-                      <button 
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => handleDeleteTask(task.id)}
-                      >
-                        <i className="bi bi-trash me-1"></i>
-                        Delete
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={handleCloseTaskModal}>Close</button>
-                <button type="button" className="btn btn-primary" onClick={handleCloseTaskModal}>Save Changes</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+// Catch-all route for undefined endpoints
+app.use('*', (req, res) => {
+  res.status(404).json({ message: 'Endpoint not found' });
+});
 
-export default DashboardPage;
+// Enhanced error handling middleware with CORS headers
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  
+  // Ensure CORS headers are set even on errors
+  res.header('Access-Control-Allow-Origin', 'https://cathealthtracker.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  res.status(500).json({ 
+    message: 'Server error occurred', 
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined 
+  });
+});
+
+// Start the server
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
