@@ -9,7 +9,6 @@ import { useNavigate } from 'react-router-dom';
 const localizer = momentLocalizer(moment);
 
 function HealthCalendarPage() {
-  const [cats, setCats] = useState([]);        // list of cats
   const [events, setEvents] = useState([]);    // combined health + task events
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -25,13 +24,12 @@ function HealthCalendarPage() {
           return;
         }
 
-        // 1. Fetch all cats
+        // 1. Fetch all cats (used locally for naming)
         const catsRes = await fetch(API_ENDPOINTS.GET_CATS, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!catsRes.ok) throw new Error('Failed to fetch cats');
         const catsData = await catsRes.json();
-        setCats(catsData);
 
         // 2. Fetch health records for each cat
         const recs = [];
@@ -46,7 +44,7 @@ function HealthCalendarPage() {
                 id: `rec-${r.id}`,
                 title: `${cat.name}: ${r.type}`,
                 start: new Date(r.date),
-                end: new Date(r.date),
+                end:   new Date(r.date),
                 allDay: true
               });
             });
@@ -76,10 +74,10 @@ function HealthCalendarPage() {
           if (t.repeatType === 'none') {
             // Single occurrence
             taskEvents.push({
-              id: `task-${t.id}`,
+              id:    `task-${t.id}`,
               title: `${t.title} (${catName})`,
               start,
-              end: start,
+              end:   start,
               allDay: true
             });
           } else {
@@ -91,10 +89,10 @@ function HealthCalendarPage() {
             for (let dt = new Date(start); dt <= endDate; dt.setMonth(dt.getMonth() + interval)) {
               const occurrence = new Date(dt);
               taskEvents.push({
-                id: `task-${t.id}-${occurrence.toISOString()}`,
+                id:    `task-${t.id}-${occurrence.toISOString()}`,
                 title: `${t.title} (${catName})`,
                 start: occurrence,
-                end: occurrence,
+                end:   occurrence,
                 allDay: true
               });
             }
@@ -141,7 +139,7 @@ function HealthCalendarPage() {
               startAccessor="start"
               endAccessor="end"
               style={{ height: '100%' }}
-              views={['month', 'week', 'day']}
+              views={['month','week','day']}
               defaultView="month"
             />
           </div>
