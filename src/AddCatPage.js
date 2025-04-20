@@ -195,6 +195,18 @@ function AddCatPage() {
                 </div>
 
                 <div className="mb-3">
+                  <label htmlFor="birthdate" className="form-label">Birthdate</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    id="birthdate"
+                    name="birthdate"
+                    value={formData.birthdate}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="mb-3">
                   <label htmlFor="weight" className="form-label">Weight (kg)</label>
                   <input
                     type="number"

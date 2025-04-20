@@ -25,6 +25,7 @@ model Cat {
   name         String
   breed        String
   age          Int?
+  birthdate    DateTime?
   weight       Float?
   imageUrl     String?        
   owner        User           @relation(fields: [ownerId], references: [id])
@@ -69,6 +70,9 @@ model CareTask {
   type        String    
   taskType    String    
   completed   Boolean   @default(false)
+  repeatType   String?   
+  repeatInterval Int?    
+  endDate      DateTime? 
   date        DateTime
   cat         Cat       @relation(fields: [catId], references: [id])
   catId       Int

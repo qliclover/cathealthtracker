@@ -24,7 +24,14 @@ function DashboardPage() {
   ]);
   
   const [editingMeal, setEditingMeal] = useState(null);
-  const [newTask, setNewTask] = useState({ title: '', icon: 'check-circle' });
+  const [newTask, setNewTask] = useState({
+    title: '',
+    icon: 'check-circle',
+    catId: '',
+    repeatType: 'none',
+    repeatInterval: 1,
+    endDate: ''
+  });  
   const navigate = useNavigate();
 
   // Toggle task completion
@@ -142,17 +149,28 @@ function DashboardPage() {
 
   // Add new task
   const handleAddTask = () => {
-    if (!newTask.title.trim()) return;
-
+    if (!newTask.title.trim() || !newTask.catId) return;
+  
     const task = {
       id: `task-${Date.now()}`,
       title: newTask.title,
       icon: newTask.icon,
-      completed: false
+      catId: newTask.catId,
+      completed: false,
+      repeatType: newTask.repeatType,
+      repeatInterval: newTask.repeatInterval,
+      endDate: newTask.endDate
     };
 
     setDailyTasks([...dailyTasks, task]);
-    setNewTask({ title: '', icon: 'check-circle' });
+    setNewTask({
+        title: '',
+        icon: 'check-circle',
+        catId: newTask.catId,
+        repeatType: 'none',
+        repeatInterval: 1,
+        endDate: ''
+    });
   };
 
   // Delete task
@@ -416,115 +434,164 @@ function DashboardPage() {
         </div>
       )}
 
-      {/* Customize Meal Schedule Modal */}
-      {showCustomizeMealModal && (
-        <div className="modal show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Customize Meal Schedule</h5>
-                <button type="button" className="btn-close" onClick={handleCloseMealModal}></button>
-              </div>
-              <div className="modal-body">
-                {editingMeal ? (
-                  <div className="mb-3">
-                    <div className="row g-3">
-                      <div className="col-md-3">
-                        <label className="form-label">Meal Name</label>
-                        <input 
-                          type="text" 
-                          className="form-control" 
-                          name="name" 
-                          value={editingMeal.name} 
-                          onChange={handleMealInputChange}
-                        />
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label">Time</label>
-                        <input 
-                          type="text" 
-                          className="form-control" 
-                          name="time" 
-                          value={editingMeal.time} 
-                          onChange={handleMealInputChange}
-                        />
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label">Food Type</label>
-                        <input 
-                          type="text" 
-                          className="form-control" 
-                          name="food" 
-                          value={editingMeal.food} 
-                          onChange={handleMealInputChange}
-                        />
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label">Amount</label>
-                        <input 
-                          type="text" 
-                          className="form-control" 
-                          name="amount" 
-                          value={editingMeal.amount} 
-                          onChange={handleMealInputChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <button 
-                        className="btn btn-primary" 
-                        onClick={handleSaveMeal}
-                      >
-                        Save Changes
-                      </button>
-                      <button 
-                        className="btn btn-outline-secondary ms-2" 
-                        onClick={() => setEditingMeal(null)}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <table className="table table-bordered">
-                    <thead>
-                      <tr>
-                        <th>Meal</th>
-                        <th>Time</th>
-                        <th>Food Type</th>
-                        <th>Amount</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mealSchedule.map(meal => (
-                        <tr key={meal.id}>
-                          <td>{meal.name}</td>
-                          <td>{meal.time}</td>
-                          <td>{meal.food}</td>
-                          <td>{meal.amount}</td>
-                          <td>
-                            <button 
-                              className="btn btn-sm btn-outline-primary" 
-                              onClick={() => handleEditMeal(meal)}
-                            >
-                              Edit
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={handleCloseMealModal}>Close</button>
-                <button type="button" className="btn btn-primary">Save Changes</button>
-              </div>
+    {showCustomizeTaskModal && (
+    <div className="modal show d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
+        <div className="modal-dialog modal-lg">
+        <div className="modal-content">
+            <div className="modal-header">
+            <h5 className="modal-title">Customize Daily Tasks</h5>
+            <button type="button" className="btn-close" onClick={handleCloseTaskModal}></button>
             </div>
-          </div>
+            <div className="modal-body">
+            <div className="mb-4">
+                <h6>Add New Task</h6>
+                <div className="row g-3">
+                <div className="col-md-6">
+                    <label className="form-label">Task Title</label>
+                    <input 
+                    type="text" 
+                    className="form-control" 
+                    name="title" 
+                    value={newTask.title} 
+                    onChange={handleNewTaskChange}
+                    placeholder="Enter task name"
+                    />
+                </div>
+                <div className="col-md-3">
+                    <label className="form-label">Icon</label>
+                    <select 
+                    className="form-select"
+                    name="icon" 
+                    value={newTask.icon} 
+                    onChange={handleNewTaskChange}
+                    >
+                    <option value="check-circle">Check</option>
+                    <option value="trash">Trash</option>
+                    <option value="droplet">Water</option>
+                    <option value="brush">Brush</option>
+                    <option value="controller">Play</option>
+                    <option value="heart">Health</option>
+                    <option value="shield">Protection</option>
+                    </select>
+                </div>
+                <div className="col-md-3">
+                    <label className="form-label">Cat</label>
+                    <select
+                    className="form-select"
+                    name="catId"
+                    value={newTask.catId || ''}
+                    onChange={handleNewTaskChange}
+                    required
+                    >
+                    <option value="">Select Cat</option>
+                    {cats.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                    </select>
+                </div>
+                </div>
+                
+                {/* Recurring task options */}
+                <div className="row mt-3">
+                <div className="col-md-3">
+                    <label className="form-label">Repeat</label>
+                    <select
+                    className="form-select"
+                    name="repeatType"
+                    value={newTask.repeatType || 'none'}
+                    onChange={handleNewTaskChange}
+                    >
+                    <option value="none">Never</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+                
+                {newTask.repeatType && newTask.repeatType !== 'none' && (
+                    <>
+                    <div className="col-md-3">
+                        <label className="form-label">Repeat Every</label>
+                        <div className="input-group">
+                        <input
+                            type="number"
+                            className="form-control"
+                            name="repeatInterval"
+                            value={newTask.repeatInterval || 1}
+                            onChange={handleNewTaskChange}
+                            min="1"
+                        />
+                        <span className="input-group-text">
+                            {newTask.repeatType === 'daily' ? 'days' : 
+                            newTask.repeatType === 'weekly' ? 'weeks' : 
+                            newTask.repeatType === 'monthly' ? 'months' : 'years'}
+                        </span>
+                        </div>
+                    </div>
+                    
+                    <div className="col-md-3">
+                        <label className="form-label">End Date (Optional)</label>
+                        <input
+                        type="date"
+                        className="form-control"
+                        name="endDate"
+                        value={newTask.endDate || ''}
+                        onChange={handleNewTaskChange}
+                        />
+                    </div>
+                    </>
+                )}
+                
+                <div className="col-md-3 d-flex align-items-end">
+                    <button 
+                    className="btn btn-primary w-100" 
+                    onClick={handleAddTask}
+                    disabled={!newTask.title.trim() || !newTask.catId}
+                    >
+                    Add Task
+                    </button>
+                </div>
+                </div>
+            </div>
+            
+            <hr />
+            
+            <h6>Current Tasks</h6>
+            <ul className="list-group">
+                {dailyTasks.map(task => (
+                <li key={task.id} className="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                    <i className={`bi bi-${task.icon} me-2`}></i>
+                    {task.title}
+                    {task.repeatType && task.repeatType !== 'none' && (
+                        <span className="badge bg-info ms-2">
+                        {task.repeatInterval > 1 ? `Every ${task.repeatInterval} ` : 'Every '}
+                        {task.repeatType === 'daily' ? 'day' : 
+                        task.repeatType === 'weekly' ? 'week' : 
+                        task.repeatType === 'monthly' ? 'month' : 'year'}
+                        </span>
+                    )}
+                    </div>
+                    <button 
+                    className="btn btn-sm btn-outline-danger"
+                    onClick={() => handleDeleteTask(task.id)}
+                    >
+                    <i className="bi bi-trash me-1"></i>
+                    Delete
+                    </button>
+                </li>
+                ))}
+            </ul>
+            </div>
+            <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={handleCloseTaskModal}>Close</button>
+            <button type="button" className="btn btn-primary" onClick={handleCloseTaskModal}>Save Changes</button>
+            </div>
         </div>
-      )}
+        </div>
+    </div>
+    )}
 
       {/* Customize Tasks Modal */}
       {showCustomizeTaskModal && (

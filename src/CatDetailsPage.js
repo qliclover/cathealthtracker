@@ -32,6 +32,21 @@ function CatDetailsPage() {
     }));
   };
 
+  // Calculate age
+  const calculateAge = (birthdate) => {
+    const today = new Date();
+    const birth = new Date(birthdate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return `${age}years old`;
+  };
+  
+
   // Fetch cat info, health records, and insurance data
   useEffect(() => {
     const fetchCatDetails = async () => {
@@ -224,6 +239,14 @@ function CatDetailsPage() {
               <div className="mb-3">
                 <strong>Weight:</strong> {cat.weight}kg
               </div>
+              {cat.birthdate && (
+                <div className="mb-3">
+                  <strong>Birthdate:</strong> {new Date(cat.birthdate).toLocaleDateString()}
+                  <span className="ms-2 badge bg-primary">
+                    {calculateAge(cat.birthdate)}
+                  </span>
+                </div>
+              )}
               {cat.description && (
                 <div className="mb-3">
                   <strong>Description:</strong> {cat.description}
