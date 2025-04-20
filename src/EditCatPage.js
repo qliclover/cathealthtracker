@@ -5,13 +5,17 @@ import { API_ENDPOINTS } from './config';
 function EditCatPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  
+  // Include birthdate field in the initial state
   const [formData, setFormData] = useState({
     name: '',
     breed: '',
     age: '',
     weight: '',
+    birthdate: '',  // Added birthdate field
     description: ''
   });
+  
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
@@ -34,11 +38,20 @@ function EditCatPage() {
           throw new Error(data.message || 'Failed to fetch cat details');
         }
 
+        // Format birthdate if it exists
+        let birthdate = '';
+        if (data.birthdate) {
+          // Convert to YYYY-MM-DD format for date input field
+          const date = new Date(data.birthdate);
+          birthdate = date.toISOString().split('T')[0];
+        }
+
         setFormData({
           name: data.name,
           breed: data.breed,
           age: data.age,
           weight: data.weight,
+          birthdate: birthdate, // Set the formatted birthdate
           description: data.description || ''
         });
 
@@ -126,6 +139,8 @@ function EditCatPage() {
       formDataToSend.append('breed', formData.breed);
       formDataToSend.append('age', formData.age);
       formDataToSend.append('weight', formData.weight);
+      formDataToSend.append('birthdate', formData.birthdate); // Include birthdate
+      formDataToSend.append('description', formData.description);
       
       if (image) {
         formDataToSend.append('image', image);
@@ -226,6 +241,18 @@ function EditCatPage() {
                 </div>
 
                 <div className="mb-3">
+                  <label htmlFor="birthdate" className="form-label">Birthdate</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    id="birthdate"
+                    name="birthdate"
+                    value={formData.birthdate || ''}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="mb-3">
                   <label htmlFor="age" className="form-label">Age (years)</label>
                   <input
                     type="number"
@@ -237,19 +264,6 @@ function EditCatPage() {
                     min="0"
                     step="0.1"
                     required
-                  />
-                </div>
-
-
-                <div className="mb-3">
-                  <label htmlFor="birthdate" className="form-label">Birthdate</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    id="birthdate"
-                    name="birthdate"
-                    value={formData.birthdate}
-                    onChange={handleChange}
                   />
                 </div>
 

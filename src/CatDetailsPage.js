@@ -43,7 +43,7 @@ function CatDetailsPage() {
       age--;
     }
     
-    return `${age}years old`;
+    return `${age} years old`;
   };
   
 
