@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { useNavigate } from 'react-router-dom';
 
 const localizer = momentLocalizer(moment);
 
@@ -11,7 +10,6 @@ export default function HealthCalendarPage() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   // Load only the customized tasks (from localStorage)
   useEffect(() => {
@@ -83,10 +81,6 @@ export default function HealthCalendarPage() {
     return events;
   }
 
-  const handleSelectEvent = event => {
-    // tasks don't have detail pages; you could navigate elsewhere if needed
-  };
-
   if (loading) {
     return (
       <div
@@ -118,7 +112,6 @@ export default function HealthCalendarPage() {
             events={calendarEvents}
             startAccessor="start"
             endAccessor="end"
-            onSelectEvent={handleSelectEvent}
             style={{ height: 600 }}
             views={['month', 'week', 'day']}
             defaultView="month"
