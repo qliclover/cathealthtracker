@@ -9,9 +9,8 @@ import { useNavigate } from 'react-router-dom';
 const localizer = momentLocalizer(moment);
 
 function HealthCalendarPage() {
-  const [cats, setCats] = useState([]);
-  const [records, setRecords] = useState([]);
-  const [events, setEvents] = useState([]);
+  const [cats, setCats] = useState([]);        // list of cats
+  const [events, setEvents] = useState([]);    // combined health + task events
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -34,7 +33,7 @@ function HealthCalendarPage() {
         const catsData = await catsRes.json();
         setCats(catsData);
 
-        // 2. Fetch recent health records for each cat
+        // 2. Fetch health records for each cat
         const recs = [];
         for (const cat of catsData) {
           const rRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${cat.id}/records`, {
@@ -42,15 +41,15 @@ function HealthCalendarPage() {
           });
           if (rRes.ok) {
             const list = await rRes.json();
-            recs.push(
-              ...list.map(r => ({
+            list.forEach(r => {
+              recs.push({
                 id: `rec-${r.id}`,
                 title: `${cat.name}: ${r.type}`,
                 start: new Date(r.date),
                 end: new Date(r.date),
                 allDay: true
-              }))
-            );
+              });
+            });
           }
         }
 
@@ -68,7 +67,7 @@ function HealthCalendarPage() {
         // 4. Convert tasks into calendar events
         const taskEvents = [];
         const today = new Date();
-        for (const t of tasks) {
+        tasks.forEach(t => {
           const start = new Date(t.startDate);
           const catName = t.catId === 'all'
             ? 'All Cats'
@@ -84,13 +83,11 @@ function HealthCalendarPage() {
               allDay: true
             });
           } else {
-            // Recurring task – generate up to one year ahead
+            // Recurring: generate up to one year ahead
             const interval = parseInt(t.repeatInterval, 10) || 1;
             const endDate = t.endDate
               ? new Date(t.endDate)
               : new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-
-            // Generate occurrences monthly
             for (let dt = new Date(start); dt <= endDate; dt.setMonth(dt.getMonth() + interval)) {
               const occurrence = new Date(dt);
               taskEvents.push({
@@ -102,9 +99,9 @@ function HealthCalendarPage() {
               });
             }
           }
-        }
+        });
 
-        // 5. Combine health records and task events
+        // 5. Combine and sort events
         const allEvents = [...recs, ...taskEvents];
         allEvents.sort((a, b) => a.start - b.start);
         setEvents(allEvents);
