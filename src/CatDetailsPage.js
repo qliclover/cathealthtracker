@@ -1,53 +1,42 @@
+// src/CatDetailsPage.js
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { API_ENDPOINTS } from './config';
 
 function CatDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  // State for storing cat info and health records
+
+  // State for cat info, records, insurance, and UI
   const [cat, setCat] = useState(null);
   const [records, setRecords] = useState([]);
   const [insurance, setInsurance] = useState([]);
-  
-  // State for keeping track of which records are expanded (record id as key)
   const [expandedRecords, setExpandedRecords] = useState({});
-  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Function to truncate text if it's too long
-  const truncate = (text, limit) => {
-    if (!text) return '';
-    return text.length > limit ? text.slice(0, limit) + '...' : text;
-  };
+  // Helper to truncate long text
+  const truncate = (text, limit) =>
+    text && text.length > limit ? text.slice(0, limit) + '…' : text;
 
-  // Toggle expanded/collapsed state for a record
-  const toggleExpand = (recordId) => {
-    setExpandedRecords(prevState => ({
-      ...prevState,
-      [recordId]: !prevState[recordId]
-    }));
-  };
+  // Toggle description expand/collapse
+  const toggleExpand = (recordId) =>
+    setExpandedRecords(prev => ({ ...prev, [recordId]: !prev[recordId] }));
 
-  // Calculate age
+  // Calculate age from birthdate
   const calculateAge = (birthdate) => {
     const today = new Date();
     const birth = new Date(birthdate);
     let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
-    
     return `${age} years old`;
   };
-  
 
-  // Fetch cat info, health records, and insurance data
+  // Fetch cat details, records, and insurance
   useEffect(() => {
     const fetchCatDetails = async () => {
       try {
@@ -56,46 +45,37 @@ function CatDetailsPage() {
           navigate('/login');
           return;
         }
-        
-        // Fetch cat basic information
-        const catResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+
+        // Fetch basic cat info
+        const catRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!catResponse.ok) {
-          if (catResponse.status === 401) {
+        if (!catRes.ok) {
+          if (catRes.status === 401) {
             localStorage.removeItem('token');
             navigate('/login');
             return;
           }
           throw new Error('Failed to fetch cat information');
         }
-        const catData = await catResponse.json();
+        const catData = await catRes.json();
         setCat(catData);
 
-        // Fetch health records for the cat
-        const recordsResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/records`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+        // Fetch health records
+        const recRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/records`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!recordsResponse.ok) {
-          throw new Error('Failed to fetch health records');
-        }
-        const recordsData = await recordsResponse.json();
-        // Ensure records is always an array
-        setRecords(Array.isArray(recordsData) ? recordsData : []);
-        
-        // Fetch insurance information for the cat
-        const insuranceResponse = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/insurance`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+        if (!recRes.ok) throw new Error('Failed to fetch health records');
+        const recList = await recRes.json();
+        setRecords(Array.isArray(recList) ? recList : []);
+
+        // Fetch insurance info
+        const insRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/insurance`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (insuranceResponse.ok) {
-          const insuranceData = await insuranceResponse.json();
-          setInsurance(Array.isArray(insuranceData) ? insuranceData : []);
+        if (insRes.ok) {
+          const insList = await insRes.json();
+          setInsurance(Array.isArray(insList) ? insList : []);
         }
       } catch (err) {
         setError(err.message);
@@ -107,60 +87,44 @@ function CatDetailsPage() {
     fetchCatDetails();
   }, [id, navigate]);
 
-  // Navigation functions
-  const handleEditCat = () => {
-    navigate(`/cats/${id}/edit`);
-  };
+  // Toggle delete confirmation card
+  const toggleConfirmDelete = () => setConfirmDelete(prev => !prev);
 
-  const handleAddRecord = () => {
-    navigate(`/cats/${id}/records/add`);
-  };
-
-  const handleEditRecord = (recordId) => {
-    navigate(`/records/${recordId}/edit`);
-  };
-  
-  const handleAddInsurance = () => {
-    navigate(`/cats/${id}/insurance/add`);
-  };
-  
-  const handleEditInsurance = (insuranceId) => {
-    navigate(`/insurance/${insuranceId}/edit`);
-  };
-
-  // Handle cat delete function
+  // Delete cat handler with detailed error reporting
   const handleDeleteCat = async () => {
+    const token = localStorage.getItem('token');
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}`, {
+      const res = await fetch(`${API_ENDPOINTS.DELETE_CAT}/${id}`, {
         method: 'DELETE',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete cat');
+      if (res.status === 401) {
+        // Unauthorized → force login
+        localStorage.removeItem('token');
+        navigate('/login');
+        return;
       }
-
-      // Return to the catlistpage
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Server responded ${res.status}: ${text}`);
+      }
+      // Success → go back to list
       navigate('/cats');
     } catch (err) {
+      console.error('Delete cat error:', err);
       setError(err.message);
     }
   };
 
-  // confirmation
-  const toggleConfirmDelete = () => {
-    setConfirmDelete(!confirmDelete);
-  };
-
-  // Check if insurance is active
-  const isInsuranceActive = (policy) => {
-    const today = new Date();
-    const endDate = new Date(policy.endDate);
-    return endDate >= today;
-  };
+  // Navigate to edit pages
+  const handleEditCat = () => navigate(`/cats/${id}/edit`);
+  const handleAddRecord = () => navigate(`/cats/${id}/records/add`);
+  const handleEditRecord = (recordId) => navigate(`/records/${recordId}/edit`);
+  const handleAddInsurance = () => navigate(`/cats/${id}/insurance/add`);
+  const handleEditInsurance = (insId) => navigate(`/insurance/${insId}/edit`);
 
   if (loading) {
     return (
@@ -171,27 +135,17 @@ function CatDetailsPage() {
       </div>
     );
   }
-
   if (error) {
-    return (
-      <div className="alert alert-danger" role="alert">
-        {error}
-      </div>
-    );
+    return <div className="alert alert-danger">{error}</div>;
   }
-
   if (!cat) {
-    return (
-      <div className="alert alert-warning" role="alert">
-        Cat information not found
-      </div>
-    );
+    return <div className="alert alert-warning">Cat information not found</div>;
   }
 
   return (
     <div className="container mt-4">
       <div className="row">
-        {/* Cat Basic Information */}
+        {/* Cat Basics */}
         <div className="col-md-6">
           <div className="card mb-4">
             <div className="card-body">
@@ -199,62 +153,52 @@ function CatDetailsPage() {
                 <h2>{cat.name}</h2>
                 <div>
                   <button className="btn btn-outline-primary me-2" onClick={handleEditCat}>
-                    <i className="bi bi-pencil-square me-2"></i>
-                    Edit
+                    <i className="bi bi-pencil-square me-2"></i>Edit
                   </button>
                   <button className="btn btn-outline-danger" onClick={toggleConfirmDelete}>
-                    <i className="bi bi-trash me-2"></i>
-                    Delete
+                    <i className="bi bi-trash me-2"></i>Delete
                   </button>
                 </div>
               </div>
+
               {cat.imageUrl ? (
                 <div className="text-center mb-3">
-                  <img 
-                    src={cat.imageUrl} 
-                    alt={cat.name} 
-                    style={{ maxHeight: '200px', maxWidth: '100%', objectFit: 'contain', borderRadius: '8px' }}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "https://placehold.co/400x300?text=Cat+Photo";
-                    }}
+                  <img
+                    src={cat.imageUrl}
+                    alt={cat.name}
+                    style={{ maxHeight: '200px', objectFit: 'contain', borderRadius: '8px' }}
+                    onError={e => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x300?text=Cat+Photo'; }}
                   />
                 </div>
               ) : (
                 <div className="text-center mb-3">
-                  <img 
-                    src="https://placehold.co/400x300?text=Cat+Photo" 
-                    alt="Default cat" 
-                    style={{ maxHeight: '200px', maxWidth: '100%', objectFit: 'contain', borderRadius: '8px' }}
+                  <img
+                    src="https://placehold.co/400x300?text=Cat+Photo"
+                    alt="Default cat"
+                    style={{ maxHeight: '200px', objectFit: 'contain', borderRadius: '8px' }}
                   />
                 </div>
               )}
-              
-              <div className="mb-3">
-                <strong>Breed:</strong> {cat.breed}
-              </div>
-              <div className="mb-3">
-                <strong>Age:</strong> {cat.age} years
-              </div>
-              <div className="mb-3">
-                <strong>Weight:</strong> {cat.weight}kg
-              </div>
+
+              <p><strong>Breed:</strong> {cat.breed}</p>
+              <p><strong>Age:</strong> {cat.age} years</p>
+              <p><strong>Weight:</strong> {cat.weight} kg</p>
               {cat.birthdate && (
-                <div className="mb-3">
-                  <strong>Birthdate:</strong> {new Date(cat.birthdate).toLocaleDateString()}
-                  <span className="ms-2 badge bg-primary">
+                <p>
+                  <strong>Birthdate:</strong>{' '}
+                  {new Date(cat.birthdate).toLocaleDateString()}{' '}
+                  <span className="badge bg-primary ms-2">
                     {calculateAge(cat.birthdate)}
                   </span>
-                </div>
+                </p>
               )}
               {cat.description && (
-                <div className="mb-3">
-                  <strong>Description:</strong> {cat.description}
-                </div>
+                <p><strong>Description:</strong> {cat.description}</p>
               )}
             </div>
           </div>
-          {/* Deletion confirmation alert */}
+
+          {/* Delete Confirmation */}
           {confirmDelete && (
             <div className="card mb-4 border-danger">
               <div className="card-body">
@@ -271,55 +215,42 @@ function CatDetailsPage() {
               </div>
             </div>
           )}
-          
-          {/* Insurance Information */}
+
+          {/* Insurance */}
           <div className="card mb-4">
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h3>Insurance</h3>
                 <button className="btn btn-primary" onClick={handleAddInsurance}>
-                  <i className="bi bi-shield-plus me-2"></i>
-                  Add Insurance
+                  <i className="bi bi-shield-plus me-2"></i>Add Insurance
                 </button>
               </div>
-
               {insurance.length === 0 ? (
                 <p className="text-muted">No insurance information available</p>
               ) : (
                 <div className="list-group">
-                  {insurance.map((policy) => (
+                  {insurance.map(policy => (
                     <div key={policy.id} className="list-group-item">
                       <div className="d-flex justify-content-between align-items-start">
                         <div>
                           <div className="d-flex align-items-center mb-1">
                             <h5 className="mb-0">{policy.provider}</h5>
-                            <span className={`badge ms-2 ${isInsuranceActive(policy) ? 'bg-success' : 'bg-danger'}`}>
-                              {isInsuranceActive(policy) ? 'Active' : 'Expired'}
-                            </span>
                           </div>
+                          <p className="mb-1"><strong>Policy:</strong> {policy.policyNumber}</p>
                           <p className="mb-1">
-                            <strong>Policy:</strong> {policy.policyNumber}
+                            <strong>Coverage Period:</strong>{' '}
+                            {new Date(policy.startDate).toLocaleDateString()} –{' '}
+                            {new Date(policy.endDate).toLocaleDateString()}
                           </p>
-                          <p className="mb-1">
-                            <strong>Coverage Period:</strong> {new Date(policy.startDate).toLocaleDateString()} to {new Date(policy.endDate).toLocaleDateString()}
-                          </p>
-                          {policy.premium && (
-                            <p className="mb-1">
-                              <strong>Premium:</strong> ${policy.premium.toFixed(2)}
-                            </p>
+                          {policy.premium != null && (
+                            <p className="mb-1"><strong>Premium:</strong> ${policy.premium.toFixed(2)}</p>
                           )}
                           {policy.coverage && (
-                            <p className="mb-1">
-                              <strong>Coverage:</strong> {policy.coverage}
-                            </p>
+                            <p className="mb-1"><strong>Coverage:</strong> {policy.coverage}</p>
                           )}
                         </div>
-                        <button
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={() => handleEditInsurance(policy.id)}
-                        >
-                          <i className="bi bi-pencil me-1"></i>
-                          Edit
+                        <button className="btn btn-sm btn-outline-secondary" onClick={() => handleEditInsurance(policy.id)}>
+                          <i className="bi bi-pencil me-1"></i>Edit
                         </button>
                       </div>
                     </div>
@@ -330,87 +261,59 @@ function CatDetailsPage() {
           </div>
         </div>
 
-        {/* Health Records List */}
+        {/* Health Records */}
         <div className="col-md-6">
           <div className="card">
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h3>Health Records</h3>
                 <button className="btn btn-primary" onClick={handleAddRecord}>
-                  <i className="bi bi-plus-circle me-2"></i>
-                  Add Record
+                  <i className="bi bi-plus-circle me-2"></i>Add Record
                 </button>
               </div>
-
-              {!Array.isArray(records) || records.length === 0 ? (
-                <div className="empty-state">
-                  <p className="empty-state-text">No health records yet</p>
-                  <button className="btn btn-outline-primary mt-2" onClick={handleAddRecord}>
-                    Add First Health Record
-                  </button>
-                </div>
+              {records.length === 0 ? (
+                <div className="text-center text-muted">No health records yet</div>
               ) : (
-                <div className="list-group health-record-list">
-                  {records.map((record) => (
+                <div className="list-group">
+                  {records.map(record => (
                     <div key={record.id} className="list-group-item">
                       <div className="d-flex justify-content-between align-items-start">
                         <div>
                           <div className="mb-1">
-                            <span className={`record-badge record-badge-${record.type.toLowerCase()}`}>
+                            <span className={`badge bg-info`}>
                               {record.type}
                             </span>
                           </div>
-                          <p className="mb-1">
-                            <small className="text-muted">
-                              <i className="bi bi-calendar3 me-1"></i>
-                              {new Date(record.date).toLocaleDateString()}
-                            </small>
-                          </p>
-
-                          <p className="mb-1">
-                            {record.description && (
-                              expandedRecords[record.id]
-                                ? record.description
-                                : truncate(record.description, 100)
-                            )}
-                            {record.description && record.description.length > 100 && (
-                              <button
-                                className="btn btn-link p-0 ms-2"
-                                onClick={() => toggleExpand(record.id)}
-                              >
+                          <small className="text-muted">
+                            <i className="bi bi-calendar3 me-1"></i>
+                            {new Date(record.date).toLocaleDateString()}
+                          </small>
+                          <p className="mt-1 mb-1">
+                            {expandedRecords[record.id]
+                              ? record.description
+                              : truncate(record.description, 100)}
+                            {record.description.length > 100 && (
+                              <button className="btn btn-link p-0 ms-2" onClick={() => toggleExpand(record.id)}>
                                 {expandedRecords[record.id] ? 'Show less' : 'Read more'}
                               </button>
                             )}
                           </p>
                           {record.notes && (
-                            <p className="mb-1">
-                              <small className="text-muted">
-                                <i className="bi bi-journal-text me-1"></i>
-                                Notes: {record.notes}
-                              </small>
-                            </p>
+                            <small className="text-muted">
+                              <i className="bi bi-journal-text me-1"></i>
+                              Notes: {record.notes}
+                            </small>
                           )}
-
                           {record.fileUrl && (
-                            <p className="mb-1">
-                              <a 
-                                href={record.fileUrl} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="btn btn-sm btn-outline-info mt-2"
-                              >
-                                <i className="bi bi-file-earmark me-1"></i>
-                                View Attachment
+                            <div className="mt-2">
+                              <a href={record.fileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-info">
+                                <i className="bi bi-file-earmark me-1"></i>View Attachment
                               </a>
-                            </p>
+                            </div>
                           )}
                         </div>
-                        <button
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={() => handleEditRecord(record.id)}
-                        >
-                          <i className="bi bi-pencil me-1"></i>
-                          Edit
+                        <button className="btn btn-sm btn-outline-secondary" onClick={() => handleEditRecord(record.id)}>
+                          <i className="bi bi-pencil me-1"></i>Edit
                         </button>
                       </div>
                     </div>
