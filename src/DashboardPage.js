@@ -21,13 +21,28 @@ function DashboardPage() {
     { id: 3, name: 'Evening', time: '8:00 PM',  food: 'Dry Raw', amount: '2oz', completed: false }
   ]);
 
-  // Daily care tasks (no icons, with catId & repeat)
-  const [dailyTasks, setDailyTasks] = useState([
-    { id: 'task-1', title: 'Clean Litter Box', catId: '', completed: false, repeatType: 'none', repeatInterval: 1, endDate: '' },
-    { id: 'task-2', title: 'Fresh Water',      catId: '', completed: false, repeatType: 'none', repeatInterval: 1, endDate: '' },
-    { id: 'task-3', title: 'Brush Teeth',      catId: '', completed: false, repeatType: 'none', repeatInterval: 1, endDate: '' },
-    { id: 'task-4', title: 'Play Time',        catId: '', completed: false, repeatType: 'none', repeatInterval: 1, endDate: '' }
-  ]);
+  // Daily care tasks (persistent via localStorage)
+  const [dailyTasks, setDailyTasks] = useState(() => {
+    const stored = localStorage.getItem('dailyTasks');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        localStorage.removeItem('dailyTasks');
+      }
+    }
+    return [
+      { id: 'task-1', title: 'Clean Litter Box', catId: '', completed: false, repeatType: 'none', repeatInterval: 1, endDate: '' },
+      { id: 'task-2', title: 'Fresh Water',      catId: '', completed: false, repeatType: 'none', repeatInterval: 1, endDate: '' },
+      { id: 'task-3', title: 'Brush Teeth',      catId: '', completed: false, repeatType: 'none', repeatInterval: 1, endDate: '' },
+      { id: 'task-4', title: 'Play Time',        catId: '', completed: false, repeatType: 'none', repeatInterval: 1, endDate: '' }
+    ];
+  });
+
+  // Persist tasks to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('dailyTasks', JSON.stringify(dailyTasks));
+  }, [dailyTasks]);
 
   // New task form state
   const [newTask, setNewTask] = useState({
@@ -399,7 +414,7 @@ function DashboardPage() {
                 ></button>
               </div>
               <div className="modal-body">
-                {/* ... your existing meal schedule customization UI ... */}
+                {/* ... existing meal customization UI ... */}
               </div>
               <div className="modal-footer">
                 <button
