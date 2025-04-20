@@ -70,7 +70,6 @@ function DashboardPage() {
     { id: 'task-4', title: 'Play Time',        completed: false, icon: 'controller' }
   ]);
 
-  const [editingMeal, setEditingMeal] = useState(null);
   const [newTask, setNewTask] = useState({
     title: '',
     icon: 'check-circle',
@@ -127,18 +126,11 @@ function DashboardPage() {
   };
 
   const handleCustomizeMealSchedule = () => setShowCustomizeMealModal(true);
-  const handleCloseMealModal     = () => { setShowCustomizeMealModal(false); setEditingMeal(null); };
+  const handleCloseMealModal     = () => setShowCustomizeMealModal(false);
   const handleCustomizeTasks     = () => setShowCustomizeTaskModal(true);
   const handleCloseTaskModal     = () => {
     setShowCustomizeTaskModal(false);
     setNewTask({ title: '', icon: 'check-circle', catId: '', repeatType: 'none', repeatInterval: 1, endDate: '' });
-  };
-
-  const handleEditMeal = (meal) => setEditingMeal({ ...meal });
-  const handleSaveMeal = () => {
-    if (!editingMeal) return;
-    setMealSchedule(mealSchedule.map(m => m.id === editingMeal.id ? editingMeal : m));
-    setEditingMeal(null);
   };
 
   const handleAddTask = () => {
@@ -149,10 +141,6 @@ function DashboardPage() {
   };
   const handleDeleteTask = (id) => setDailyTasks(dailyTasks.filter(t => t.id !== id));
 
-  const handleMealInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditingMeal(prev => ({ ...prev, [name]: value }));
-  };
   const handleNewTaskChange = (e) => {
     const { name, value } = e.target;
     setNewTask(prev => ({ ...prev, [name]: value }));
@@ -160,9 +148,7 @@ function DashboardPage() {
 
   if (loading) return (
     <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-      <div className="spinner-border text-primary" role="status">
-        <span className="visually-hidden">Loading...</span>
-      </div>
+      <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
     </div>
   );
   if (error) return <div className="alert alert-danger">{error}</div>;
@@ -176,17 +162,17 @@ function DashboardPage() {
         </div>
         <div className="col-auto">
           <Link to="/cats/add" className="btn btn-primary">
-            <i className="bi bi-plus-circle me-2"></i>Add Cat
+            <i className="bi bi-plus-circle me-2" />Add Cat
           </Link>
         </div>
       </div>
 
       {/* Cats Overview */}
-      <div className="row">
-        <div className="col-12 mb-4">
+      <div className="row mb-4">
+        <div className="col-12">
           <div className="card">
             <div className="card-header bg-primary bg-opacity-10">
-              <h4 className="mb-0 text-primary"><i className="bi bi-house me-2"></i>My Cats</h4>
+              <h4 className="mb-0 text-primary"><i className="bi bi-house me-2" />My Cats</h4>
             </div>
             <div className="card-body">
               <div className="row row-cols-1 row-cols-md-3 g-4">
@@ -227,12 +213,14 @@ function DashboardPage() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Recent Health Records */}
-        <div className="col-12 mb-4">
+      {/* Recent Health Records */}
+      <div className="row mb-4">
+        <div className="col-12">
           <div className="card">
             <div className="card-header bg-info bg-opacity-10">
-              <h4 className="mb-0 text-info"><i className="bi bi-journal-medical me-2"></i>Recent Health Records</h4>
+              <h4 className="mb-0 text-info"><i className="bi bi-journal-medical me-2" />Recent Health Records</h4>
             </div>
             <div className="card-body">
               {healthRecords.length === 0 ? (
@@ -260,14 +248,16 @@ function DashboardPage() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Daily Care Tasks */}
-        <div className="col-12 mb-4">
+      {/* Daily Care Tasks */}
+      <div className="row mb-4">
+        <div className="col-12">
           <div className="card">
             <div className="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
-              <h4 className="mb-0 text-warning"><i className="bi bi-check2-circle me-2"></i>Daily Care Tasks</h4>
+              <h4 className="mb-0 text-warning"><i className="bi bi-check2-circle me-2" />Daily Care Tasks</h4>
               <button className="btn btn-sm btn-outline-warning" onClick={handleCustomizeTasks}>
-                <i className="bi bi-pencil-square me-1"></i>Customize Tasks
+                <i className="bi bi-pencil-square me-1" />Customize Tasks
               </button>
             </div>
             <div className="card-body">
@@ -278,8 +268,9 @@ function DashboardPage() {
                   {dailyTasks.map(task => (
                     <li
                       key={task.id}
-                      className={`list-group-item d-flex justify-content-between align-items-center
-                        ${task.completed ? 'list-group-item-success' : ''}`}
+                      className={`list-group-item d-flex justify-content-between align-items-center ${
+                        task.completed ? 'list-group-item-success' : ''
+                      }`}
                     >
                       <div>
                         <i className={`bi bi-${task.icon} me-2`}></i>
@@ -306,12 +297,14 @@ function DashboardPage() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Daily Meal Timetable */}
+      {/* Daily Meal Timetable */}
+      <div className="row mb-4">
         <div className="col-12">
           <div className="card">
             <div className="card-header bg-success bg-opacity-10">
-              <h4 className="mb-0 text-success"><i className="bi bi-clock-history me-2"></i>Daily Meal Timetable</h4>
+              <h4 className="mb-0 text-success"><i className="bi bi-clock-history me-2" />Daily Meal Timetable</h4>
             </div>
             <div className="card-body">
               <div className="table-responsive">
@@ -328,10 +321,10 @@ function DashboardPage() {
               </div>
               <div className="d-flex justify-content-between mt-3">
                 <button className="btn btn-outline-success" onClick={handleCustomizeMealSchedule}>
-                  <i className="bi bi-gear me-2"></i>Customize Meal Schedule
+                  <i className="bi bi-gear me-2" />Customize Meal Schedule
                 </button>
                 <button className="btn btn-outline-primary">
-                  <i className="bi bi-clock-history me-2"></i>View Feeding History
+                  <i className="bi bi-clock-history me-2" />View Feeding History
                 </button>
               </div>
             </div>
@@ -349,74 +342,22 @@ function DashboardPage() {
                 <button type="button" className="btn-close" onClick={handleCloseMealModal}></button>
               </div>
               <div className="modal-body">
-                {editingMeal ? (
-                  <div className="mb-3">
-                    <div className="row g-3">
-                      <div className="col-md-3">
-                        <label className="form-label">Meal Name</label>
-                        <input
-                          type="text" className="form-control"
-                          name="name" value={editingMeal.name}
-                          onChange={handleMealInputChange}
-                        />
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label">Time</label>
-                        <input
-                          type="text" className="form-control"
-                          name="time" value={editingMeal.time}
-                          onChange={handleMealInputChange}
-                        />
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label">Food Type</label>
-                        <input
-                          type="text" className="form-control"
-                          name="food" value={editingMeal.food}
-                          onChange={handleMealInputChange}
-                        />
-                      </div>
-                      <div className="col-md-3">
-                        <label className="form-label">Amount</label>
-                        <input
-                          type="text" className="form-control"
-                          name="amount" value={editingMeal.amount}
-                          onChange={handleMealInputChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <button className="btn btn-primary" onClick={handleSaveMeal}>Save Changes</button>
-                      <button className="btn btn-outline-secondary ms-2" onClick={() => setEditingMeal(null)}>Cancel</button>
-                    </div>
-                  </div>
-                ) : (
-                  <table className="table table-bordered">
-                    <thead><tr><th>Meal</th><th>Time</th><th>Food Type</th><th>Amount</th><th>Action</th></tr></thead>
-                    <tbody>
-                      {mealSchedule.map(meal => (
-                        <tr key={meal.id} className={meal.completed ? 'table-success' : ''}>
-                          <td><span className={meal.completed ? 'text-decoration-line-through' : ''}>{meal.name}</span></td>
-                          <td><span className={meal.completed ? 'text-decoration-line-through' : ''}>{meal.time}</span></td>
-                          <td><span className={meal.completed ? 'text-decoration-line-through' : ''}>{meal.food}</span></td>
-                          <td><span className={meal.completed ? 'text-decoration-line-through' : ''}>{meal.amount}</span></td>
-                          <td>
-                            <button
-                              className={`btn btn-sm ${meal.completed ? 'btn-outline-secondary' : 'btn-success'}`}
-                              onClick={() => markAsFed(meal.id)}
-                            >
-                              {meal.completed ? 'Undo' : 'Mark as Fed'}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                <table className="table table-bordered">
+                  <thead><tr><th>Meal</th><th>Time</th><th>Food</th><th>Amount</th></tr></thead>
+                  <tbody>
+                    {mealSchedule.map(meal => (
+                      <tr key={meal.id}>
+                        <td>{meal.name}</td>
+                        <td>{meal.time}</td>
+                        <td>{meal.food}</td>
+                        <td>{meal.amount}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={handleCloseMealModal}>Close</button>
-                <button type="button" className="btn btn-primary" onClick={handleCloseMealModal}>Save Changes</button>
+                <button className="btn btn-secondary" onClick={handleCloseMealModal}>Close</button>
               </div>
             </div>
           </div>
@@ -492,20 +433,18 @@ function DashboardPage() {
                     {newTask.repeatType !== 'none' && (
                       <>
                         <div className="col-md-3">
-                          <label className="form-label">Repeat Every</label>
+                          <label className="form-label">Interval</label>
                           <div className="input-group">
                             <input
                               type="number" className="form-control"
                               name="repeatInterval" value={newTask.repeatInterval}
                               onChange={handleNewTaskChange} min="1"
                             />
-                            <span className="input-group-text">
-                              {newTask.repeatType}
-                            </span>
+                            <span className="input-group-text">{newTask.repeatType}</span>
                           </div>
                         </div>
                         <div className="col-md-3">
-                          <label className="form-label">End Date (Optional)</label>
+                          <label className="form-label">End Date</label>
                           <input
                             type="date" className="form-control"
                             name="endDate" value={newTask.endDate}
@@ -531,7 +470,8 @@ function DashboardPage() {
                   {dailyTasks.map(task => (
                     <li
                       key={task.id}
-                      className={`list-group-item d-flex justify-content-between align-items-center`}>
+                      className="list-group-item d-flex justify-content-between align-items-center"
+                    >
                       <div>
                         <i className={`bi bi-${task.icon} me-2`}></i>
                         {task.title}
@@ -546,7 +486,7 @@ function DashboardPage() {
                         className="btn btn-sm btn-outline-danger"
                         onClick={() => handleDeleteTask(task.id)}
                       >
-                        <i className="bi bi-trash me-1"></i>Delete
+                        <i className="bi bi-trash me-1" />Delete
                       </button>
                     </li>
                   ))}
@@ -554,7 +494,6 @@ function DashboardPage() {
               </div>
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={handleCloseTaskModal}>Close</button>
-                <button className="btn btn-primary" onClick={handleCloseTaskModal}>Save Changes</button>
               </div>
             </div>
           </div>
