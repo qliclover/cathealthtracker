@@ -1,25 +1,18 @@
+// src/DashboardPage.js
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from './config';
 
 function DashboardPage() {
-  const navigate = useNavigate();
   const [cats, setCats] = useState([]);
   const [healthRecords, setHealthRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Modal for customizing daily tasks
+  // Control the "Customize Tasks" modal
   const [showCustomizeTaskModal, setShowCustomizeTaskModal] = useState(false);
 
-  // Sample meal schedule (unchanged)
-  const [mealSchedule, setMealSchedule] = useState([
-    { id: 1, name: 'Morning', time: '12:00 PM', food: 'Raw', amount: '2oz', completed: false },
-    { id: 2, name: 'Noon',    time: '2:30 PM',  food: 'Raw', amount: '2oz', completed: false },
-    { id: 3, name: 'Evening', time: '8:00 PM',  food: 'Dry Raw', amount: '2oz', completed: false }
-  ]);
-
-  // Persisted daily tasks
+  // Load tasks from localStorage (or empty array)
   const [dailyTasks, setDailyTasks] = useState(() => {
     const stored = localStorage.getItem('dailyTasks');
     if (stored) {
@@ -32,12 +25,12 @@ function DashboardPage() {
     return [];
   });
 
-  // Keep tasks in localStorage
+  // Persist tasks whenever they change
   useEffect(() => {
     localStorage.setItem('dailyTasks', JSON.stringify(dailyTasks));
   }, [dailyTasks]);
 
-  // New task form state
+  // New-task form state, now with startDate & optional endDate
   const [newTask, setNewTask] = useState({
     title: '',
     catId: '',
@@ -47,7 +40,41 @@ function DashboardPage() {
     endDate: ''
   });
 
-  // Fetch cats & health records once
+  const navigate = useNavigate();
+
+  // Toggle a task's completed flag
+  const toggleTaskComplete = (id) => {
+    setDailyTasks(tasks =>
+      tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t)
+    );
+  };
+
+  // Add the new task
+  const handleAddTask = () => {
+    if (!newTask.title.trim() || !newTask.catId) return;
+    const task = {
+      id: `task-${Date.now()}`,
+      ...newTask,
+      completed: false
+    };
+    setDailyTasks(tasks => [...tasks, task]);
+    setShowCustomizeTaskModal(false);
+    // Reset title but keep other values for convenience
+    setNewTask(prev => ({ ...prev, title: '' }));
+  };
+
+  // Delete a task
+  const handleDeleteTask = (id) => {
+    setDailyTasks(tasks => tasks.filter(t => t.id !== id));
+  };
+
+  // Update newTask form fields
+  const handleNewTaskChange = (e) => {
+    const { name, value } = e.target;
+    setNewTask(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Fetch cats and recent health records
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -57,7 +84,7 @@ function DashboardPage() {
           return;
         }
 
-        // Fetch all cats
+        // Fetch cats
         const catsRes = await fetch(API_ENDPOINTS.GET_CATS, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -65,21 +92,20 @@ function DashboardPage() {
         const catsData = await catsRes.json();
         setCats(catsData);
 
-        // Fetch latest 5 health records
-        const allRecs = [];
+        // Fetch up to 5 recent health records across all cats
+        const recs = [];
         for (const cat of catsData) {
-          const recRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${cat.id}/records`, {
+          const rRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${cat.id}/records`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          if (recRes.ok) {
-            const recs = await recRes.json();
-            if (Array.isArray(recs) && recs.length) {
-              allRecs.push(...recs.map(r => ({ ...r, catName: cat.name })));
-            }
+          if (rRes.ok) {
+            const list = await rRes.json();
+            recs.push(...list.map(r => ({ ...r, catName: cat.name })));
           }
         }
-        allRecs.sort((a, b) => new Date(b.date) - new Date(a.date));
-        setHealthRecords(allRecs.slice(0, 5));
+        recs.sort((a, b) => new Date(b.date) - new Date(a.date));
+        setHealthRecords(recs.slice(0, 5));
+
       } catch (e) {
         setError(e.message);
       } finally {
@@ -89,45 +115,15 @@ function DashboardPage() {
     fetchData();
   }, [navigate]);
 
-  // Toggle task completion
-  const toggleTaskComplete = (id) => {
-    setDailyTasks(tasks =>
-      tasks.map(t => (t.id === id ? { ...t, completed: !t.completed } : t))
-    );
-  };
-
-  // Add a new task
-  const handleAddTask = () => {
-    if (!newTask.title.trim() || !newTask.catId) return;
-    const task = { id: `task-${Date.now()}`, ...newTask, completed: false };
-    setDailyTasks(tasks => [...tasks, task]);
-    setShowCustomizeTaskModal(false);
-  };
-
-  // Delete a task
-  const handleDeleteTask = (id) => {
-    setDailyTasks(tasks => tasks.filter(t => t.id !== id));
-  };
-
-  // Handle form input change
-  const handleNewTaskChange = (e) => {
-    const { name, value } = e.target;
-    setNewTask(prev => ({ ...prev, [name]: value }));
-  };
-
   if (loading) {
     return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: '50vh' }}
-      >
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
       </div>
     );
   }
-
   if (error) {
     return <div className="alert alert-danger">{error}</div>;
   }
@@ -137,11 +133,12 @@ function DashboardPage() {
       {/* Header */}
       <div className="row mb-4">
         <div className="col">
-          <h1>Dashboard</h1>
+          <h1 className="mb-0">Dashboard</h1>
+          <p className="text-muted">Manage your cats' health and care routines</p>
         </div>
         <div className="col-auto">
           <Link to="/cats/add" className="btn btn-primary">
-            Add Cat
+            <i className="bi bi-plus-circle me-2"></i>Add Cat
           </Link>
         </div>
       </div>
@@ -151,13 +148,13 @@ function DashboardPage() {
         <div className="col-12">
           <div className="card">
             <div className="card-header bg-primary bg-opacity-10">
-              <h4 className="text-primary mb-0">
-                My Cats
+              <h4 className="mb-0 text-primary">
+                <i className="bi bi-house me-2"></i>My Cats
               </h4>
             </div>
             <div className="card-body">
               {cats.length === 0 ? (
-                <p className="text-muted">No cats yet.</p>
+                <p className="text-muted">No cats yet. Click “Add Cat” to start.</p>
               ) : (
                 <div className="row row-cols-1 row-cols-md-3 g-4">
                   {cats.map(cat => (
@@ -170,10 +167,7 @@ function DashboardPage() {
                                 src={cat.imageUrl}
                                 alt={cat.name}
                                 style={{ maxHeight: '150px', objectFit: 'contain' }}
-                                onError={e => {
-                                  e.target.onerror = null;
-                                  e.target.src = 'https://placehold.co/400x300?text=Cat+Photo';
-                                }}
+                                onError={e => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x300?text=Cat+Photo'; }}
                               />
                             </div>
                           ) : (
@@ -187,7 +181,7 @@ function DashboardPage() {
                           )}
                           <div className="card-body text-center">
                             <h5 className="card-title mb-1">{cat.name}</h5>
-                            <p className="text-muted small mb-0">{cat.breed}</p>
+                            <p className="card-text small text-muted mb-0">{cat.breed}</p>
                           </div>
                         </div>
                       </Link>
@@ -205,8 +199,8 @@ function DashboardPage() {
         <div className="col-12">
           <div className="card">
             <div className="card-header bg-info bg-opacity-10">
-              <h4 className="text-info mb-0">
-                Recent Health Records
+              <h4 className="mb-0 text-info">
+                <i className="bi bi-journal-medical me-2"></i>Recent Health Records
               </h4>
             </div>
             <div className="card-body">
@@ -239,31 +233,38 @@ function DashboardPage() {
         <div className="col-12">
           <div className="card">
             <div className="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
-              <h4 className="text-warning mb-0">Daily Care Tasks</h4>
+              <h4 className="mb-0 text-warning">
+                <i className="bi bi-check2-circle me-2"></i>Daily Care Tasks
+              </h4>
               <button
                 className="btn btn-sm btn-outline-warning"
                 onClick={() => setShowCustomizeTaskModal(true)}
               >
-                Customize Tasks
+                <i className="bi bi-pencil-square me-1"></i>Customize Tasks
               </button>
             </div>
             <div className="card-body">
               {dailyTasks.length === 0 ? (
-                <p className="text-muted">No tasks yet.</p>
+                <p className="text-muted">No daily tasks yet.</p>
               ) : (
                 <ul className="list-group">
                   {dailyTasks.map(task => (
                     <li
                       key={task.id}
-                      className={`list-group-item d-flex justify-content-between align-items-center ${task.completed ? 'list-group-item-success' : ''}`}
+                      className={`list-group-item d-flex justify-content-between align-items-center ${
+                        task.completed ? 'list-group-item-success' : ''
+                      }`}
                     >
                       <div>
                         <span className={task.completed ? 'text-decoration-line-through' : ''}>
                           {task.title}
                         </span>
-                        <span className="badge bg-info ms-2">
-                          {task.repeatInterval > 1 ? `Every ${task.repeatInterval} ` : 'Every '}{task.repeatType}
-                        </span>
+                        {task.repeatType !== 'none' && (
+                          <span className="badge bg-info ms-2">
+                            {task.repeatInterval > 1 ? `Every ${task.repeatInterval} ` : 'Every '}
+                            {task.repeatType}
+                          </span>
+                        )}
                         <span className="badge bg-secondary ms-2">{task.startDate}</span>
                         {task.endDate && (
                           <span className="badge bg-secondary ms-2">until {task.endDate}</span>
@@ -271,12 +272,16 @@ function DashboardPage() {
                         {task.catId === 'all' ? (
                           <span className="badge bg-secondary ms-2">All Cats</span>
                         ) : (
-                          <span className="badge bg-secondary ms-2">{cats.find(c => c.id === task.catId)?.name}</span>
+                          <span className="badge bg-secondary ms-2">
+                            {cats.find(c => c.id === task.catId)?.name}
+                          </span>
                         )}
                       </div>
                       <div>
                         <button
-                          className={`btn btn-sm ${task.completed ? 'btn-outline-success' : 'btn-success'} me-2`}
+                          className={`btn btn-sm ${
+                            task.completed ? 'btn-outline-success' : 'btn-success'
+                          } me-2`}
                           onClick={() => toggleTaskComplete(task.id)}
                         >
                           {task.completed ? 'Done ✓' : 'Mark Done'}
@@ -297,32 +302,18 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* Daily Meal Timetable (unchanged) */}
-      <div className="row">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-header bg-success bg-opacity-10">
-              <h4 className="text-success mb-0">Daily Meal Timetable</h4>
-            </div>
-            <div className="card-body">
-              {/* Table omitted for brevity */}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Customize Tasks Modal */}
       {showCustomizeTaskModal && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div
+          className="modal show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+        >
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Customize Daily Tasks</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowCustomizeTaskModal(false)}
-                ></button>
+                <button className="btn-close" onClick={() => setShowCustomizeTaskModal(false)} />
               </div>
               <div className="modal-body">
                 <div className="row g-3 mb-3">
@@ -344,7 +335,6 @@ function DashboardPage() {
                       name="catId"
                       value={newTask.catId}
                       onChange={handleNewTaskChange}
-                      required
                     >
                       <option value="">Select Cat</option>
                       <option value="all">All Cats</option>
@@ -366,7 +356,6 @@ function DashboardPage() {
                     />
                   </div>
                 </div>
-
                 <div className="row g-3 mb-3">
                   <div className="col-md-4">
                     <label className="form-label">Repeat</label>
@@ -412,16 +401,21 @@ function DashboardPage() {
                     </>
                   )}
                 </div>
-
-                <div className="d-grid">
-                  <button
-                    className="btn btn-primary"
-                    onClick={handleAddTask}
-                    disabled={!newTask.title.trim() || !newTask.catId}
-                  >
-                    Add Task
-                  </button>
-                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowCustomizeTaskModal(false)}
+                >
+                  Close
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleAddTask}
+                  disabled={!newTask.title.trim() || !newTask.catId}
+                >
+                  Add Task
+                </button>
               </div>
             </div>
           </div>
