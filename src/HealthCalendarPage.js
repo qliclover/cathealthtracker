@@ -1,4 +1,3 @@
-// src/HealthCalendarPage.js
 import React, { useState, useEffect } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
@@ -9,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 const localizer = momentLocalizer(moment);
 
 function HealthCalendarPage() {
-  const [events, setEvents] = useState([]);    // combined health + task events
+  const [events, setEvents] = useState([]);   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -24,14 +23,14 @@ function HealthCalendarPage() {
           return;
         }
 
-        // 1. Fetch all cats (used locally for naming)
+        // Fetch all cats (used locally for naming)
         const catsRes = await fetch(API_ENDPOINTS.GET_CATS, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!catsRes.ok) throw new Error('Failed to fetch cats');
         const catsData = await catsRes.json();
 
-        // 2. Fetch health records for each cat
+        // Fetch health records for each cat
         const recs = [];
         for (const cat of catsData) {
           const rRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${cat.id}/records`, {
@@ -51,7 +50,7 @@ function HealthCalendarPage() {
           }
         }
 
-        // 3. Load custom tasks from localStorage
+        // Load custom tasks from localStorage
         let tasks = [];
         const stored = localStorage.getItem('dailyTasks');
         if (stored) {
@@ -62,7 +61,7 @@ function HealthCalendarPage() {
           }
         }
 
-        // 4. Convert tasks into calendar events
+        // Convert tasks into calendar events
         const taskEvents = [];
         const today = new Date();
         tasks.forEach(t => {
@@ -81,7 +80,7 @@ function HealthCalendarPage() {
               allDay: true
             });
           } else {
-            // Recurring: generate up to one year ahead
+            // generate up to one year ahead
             const interval = parseInt(t.repeatInterval, 10) || 1;
             const endDate = t.endDate
               ? new Date(t.endDate)
@@ -99,7 +98,7 @@ function HealthCalendarPage() {
           }
         });
 
-        // 5. Combine and sort events
+        // Combine and sort events
         const allEvents = [...recs, ...taskEvents];
         allEvents.sort((a, b) => a.start - b.start);
         setEvents(allEvents);

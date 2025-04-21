@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from './config';
 
 function EditInsurancePage() {
-  const { id } = useParams(); // Insurance ID
+  const { id } = useParams(); 
   const navigate = useNavigate();
   const [catId, setCatId] = useState(null);
   const [formData, setFormData] = useState({

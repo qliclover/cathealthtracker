@@ -1,4 +1,3 @@
-// src/DashboardPage.js
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from './config';
@@ -9,7 +8,7 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // --- Meal timetable state ---
+  // Meal timetable state
   const [mealSchedule, setMealSchedule] = useState([
     { id: 1, name: 'Morning', time: '12:00 PM', food: 'Raw', amount: '2oz', completed: false },
     { id: 2, name: 'Noon',    time: '2:30 PM',  food: 'Raw', amount: '2oz', completed: false },
@@ -23,7 +22,7 @@ function DashboardPage() {
     );
   };
 
-  // --- Tasks modal & state ---
+  // Tasks modal & state
   const [showCustomizeTaskModal, setShowCustomizeTaskModal] = useState(false);
   const [dailyTasks, setDailyTasks] = useState(() => {
     const stored = localStorage.getItem('dailyTasks');

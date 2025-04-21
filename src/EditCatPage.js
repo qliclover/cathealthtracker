@@ -6,7 +6,6 @@ function EditCatPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   
-  // Include birthdate field in the initial state
   const [formData, setFormData] = useState({
     name: '',
     breed: '',
@@ -37,10 +36,9 @@ function EditCatPage() {
           throw new Error(data.message || 'Failed to fetch cat details');
         }
 
-        // Format birthdate if it exists
         let birthdate = '';
         if (data.birthdate) {
-          // Convert to YYYY-MM-DD format for date input field
+          // Convert to YYYY-MM-DD format
           const date = new Date(data.birthdate);
           birthdate = date.toISOString().split('T')[0];
         }
@@ -50,7 +48,7 @@ function EditCatPage() {
           breed: data.breed,
           age: data.age,
           weight: data.weight,
-          birthdate: birthdate, // Set the formatted birthdate
+          birthdate: birthdate, 
           description: data.description || ''
         });
 
