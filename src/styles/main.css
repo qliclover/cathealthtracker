@@ -1,8 +1,8 @@
 /* Global Styles */
 body {
     font-family: 'Nunito', 'Segoe UI', Roboto, sans-serif;
-    background-color: #FDF9FD;
-    color: #5D4037;
+    background-color: #ffffff;
+    color: #333333;
   }
   
   /* Animation for page transitions */
@@ -48,34 +48,38 @@ body {
     border-width: 0.2em;
     width: 2.5rem;
     height: 2.5rem;
-    color: #FF6B98;
+    color: #333333;
   }
   
   /* Alerts */
   .alert {
-    border-radius: 20px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     border: none;
   }
   
   .alert-danger {
-    background-color: #FFEBEE;
-    color: #E53935;
+    background-color: #fff5f5;
+    color: #dc3545;
+    border: 1px solid #ffd6d6;
   }
   
   .alert-success {
-    background-color: #E8F5E9;
-    color: #43A047;
+    background-color: #f0fff0;
+    color: #28a745;
+    border: 1px solid #d4edda;
   }
   
   .alert-warning {
-    background-color: #FFF8E1;
-    color: #FFA000;
+    background-color: #fff8f0;
+    color: #ffc107;
+    border: 1px solid #fff3cd;
   }
   
   .alert-info {
-    background-color: #E1F5FE;
-    color: #039BE5;
+    background-color: #f0f8ff;
+    color: #17a2b8;
+    border: 1px solid #d1ecf1;
   }
   
   /* Empty state styling */
@@ -86,38 +90,34 @@ body {
   
   .empty-state-icon {
     font-size: 4rem;
-    color: #F8BBD0;
+    color: #333333;
     margin-bottom: 20px;
   }
   
   .empty-state-text {
-    color: #9C27B0;
+    color: #666666;
     font-size: 1.1rem;
   }
   
   /* Links */
   a {
-    color: #FF6B98;
+    color: #333333;
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: color 0.2s ease;
   }
   
   a:hover {
-    color: #9C27B0;
+    color: #222222;
     text-decoration: none;
   }
   
   /* Text colors */
   .text-primary {
-    color: #9C27B0 !important;
+    color: #333333 !important;
   }
   
   .text-secondary {
-    color: #FF6B98 !important;
-  }
-  
-  .text-muted {
-    color: #B39DDB !important;
+    color: #666666 !important;
   }
   
   /* Headings */
