@@ -10,18 +10,9 @@ function CatDetailsPage() {
   const [cat, setCat] = useState(null);
   const [records, setRecords] = useState([]);
   const [insurance, setInsurance] = useState([]);
-  const [expandedRecords, setExpandedRecords] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
-
-  // Truncate long text
-  const truncate = (text, limit) =>
-    text && text.length > limit ? text.slice(0, limit) + '…' : text;
-
-  // Toggle expanded/collapsed description
-  const toggleExpand = (recordId) =>
-    setExpandedRecords(prev => ({ ...prev, [recordId]: !prev[recordId] }));
 
   // Calculate exact age from a birthdate string
   const calculateAge = (birthdate) => {
@@ -119,9 +110,6 @@ function CatDetailsPage() {
 
   // Navigation helpers
   const handleEditCat = () => navigate(`/cats/${id}/edit`);
-  const handleAddRecord = () => navigate(`/cats/${id}/records/add`);
-  const handleEditRecord = (rid) => navigate(`/records/${rid}/edit`);
-  const handleAddInsurance = () => navigate(`/cats/${id}/insurance/add`);
   const handleEditInsurance = (iid) => navigate(`/insurance/${iid}/edit`);
 
   if (loading) {
