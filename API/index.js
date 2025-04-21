@@ -487,10 +487,13 @@ app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, 
 // Configure storage for health record file uploads
 const fileStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'cat-health-records',
-    format: async (req, file) => 'auto',
-    public_id: (req, file) => `record-${Date.now()}`
+  params: async (req, file) => {
+    const ext = path.extname(file.originalname).slice(1); 
+    return {
+      folder: 'cat-health-records',
+      format: ext, 
+      public_id: `record-${Date.now()}`
+    };
   }
 });
 
