@@ -159,3 +159,138 @@ body {
   ::-webkit-scrollbar-thumb:hover {
     background: #FF6B98;
   }
+
+  /* Navigation Bar */
+  .navbar {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background-color: #333333;
+    padding: 0.8rem 1rem;
+    border-radius: 0;
+  }
+
+  .navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: white !important;
+  }
+
+  .navbar-dark .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .navbar-dark .navbar-nav .nav-link:hover {
+    color: white !important;
+  }
+
+  /* Buttons */
+  .btn {
+    border-radius: 6px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-primary {
+    background-color: #333333;
+    border: none;
+    box-shadow: none;
+  }
+
+  .btn-primary:hover {
+    background-color: #222222;
+  }
+
+  .btn-outline-primary {
+    border-color: #333333;
+    color: #333333;
+  }
+
+  .btn-outline-primary:hover {
+    background-color: #333333;
+    color: white;
+  }
+
+  .btn-secondary {
+    background-color: #666666;
+    border: none;
+  }
+
+  .btn-secondary:hover {
+    background-color: #555555;
+  }
+
+  .btn-outline-secondary {
+    border-color: #666666;
+    color: #666666;
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: #666666;
+    color: white;
+  }
+
+  /* Cards */
+  .card {
+    transition: box-shadow 0.2s ease;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 20px;
+  }
+
+  .card:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  .card-body {
+    padding: 1.25rem;
+  }
+
+  .card-title {
+    font-weight: 600;
+    color: #333333;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-subtitle {
+    color: #666666;
+    margin-bottom: 0.75rem;
+  }
+
+  /* List group items */
+  .list-group-item {
+    border: 1px solid #eeeeee;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    box-shadow: none;
+    transition: background-color 0.2s ease;
+  }
+
+  .list-group-item:hover {
+    background-color: #f8f9fa;
+  }
+
+  /* Icons */
+  .bi {
+    margin-right: 5px;
+  }
+
+  /* Cat specific elements */
+  .cat-icon {
+    font-size: 1.25rem;
+    color: #333333;
+  }
+
+  /* Badges */
+  .badge {
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-weight: 500;
+  }
+
+  /* Tooltips */
+  .tooltip {
+    font-size: 0.85rem;
+  }
