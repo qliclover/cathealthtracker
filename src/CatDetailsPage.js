@@ -13,6 +13,7 @@ function CatDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmDeleteRecord, setConfirmDeleteRecord] = useState(null);
 
   // Calculate exact age from a birthdate string
   const calculateAge = (birthdate) => {
@@ -81,6 +82,11 @@ function CatDetailsPage() {
   // Toggle delete‑confirmation UI
   const toggleConfirmDelete = () => setConfirmDelete(prev => !prev);
 
+  // Toggle delete record confirmation
+  const toggleDeleteRecord = (recordId = null) => {
+    setConfirmDeleteRecord(recordId);
+  };
+
   // Delete handler with detailed error
   const handleDeleteCat = async () => {
     const token = localStorage.getItem('token');
@@ -132,6 +138,8 @@ function CatDetailsPage() {
 
       // Update records list after successful deletion
       setRecords(records.filter(record => record.id !== recordId));
+      // Close confirmation dialog
+      setConfirmDeleteRecord(null);
     } catch (err) {
       console.error('Delete record error:', err);
       setError(err.message);
@@ -240,7 +248,7 @@ function CatDetailsPage() {
                     <div className="health-record-actions">
                       <button 
                         className="health-record-btn delete"
-                        onClick={() => handleDeleteRecord(record.id)}
+                        onClick={() => toggleDeleteRecord(record.id)}
                         title="Delete record"
                       >
                         <i className="bi bi-trash"></i>
@@ -309,6 +317,30 @@ function CatDetailsPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Record Confirmation */}
+      {confirmDeleteRecord && (
+        <div className="delete-confirmation">
+          <h3 className="delete-confirmation-title">Delete Health Record</h3>
+          <p className="delete-confirmation-text">
+            Are you sure you want to delete this health record? This cannot be undone.
+          </p>
+          <div className="delete-confirmation-actions">
+            <button
+              className="cat-action-btn edit"
+              onClick={() => toggleDeleteRecord(null)}
+            >
+              Cancel
+            </button>
+            <button
+              className="cat-action-btn delete"
+              onClick={() => handleDeleteRecord(confirmDeleteRecord)}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation */}
       {confirmDelete && (
