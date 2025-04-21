@@ -62,69 +62,69 @@ function LoginPage() {
   };
 
   return (
-    <div className="container mt-5">
+    <div className="auth-container">
       <div className="row justify-content-center">
         <div className="col-md-6">
-          <div className="card shadow">
-            <div className="card-body">
-              <h2 className="text-center mb-4">Login</h2>
+          <div className="auth-card">
+            <h2 className="auth-title">Welcome Back</h2>
               
-              {error && (
-                <div className="alert alert-danger" role="alert">
-                  {error}
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label htmlFor="email" className="form-label">Email</label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label htmlFor="password" className="form-label">Password</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="d-grid gap-2">
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading}
-                  >
-                    {loading ? 'Logging in...' : 'Login'}
-                  </button>
-                  
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={handleTestLogin}
-                    disabled={loading}
-                  >
-                    Use Test Account
-                  </button>
-                </div>
-              </form>
-              
-              <div className="mt-3 text-center">
-                <p>Don't have an account? <a href="/register">Register now</a></p>
+            {error && (
+              <div className="alert alert-danger" role="alert">
+                {error}
               </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="mb-3">
+                <label htmlFor="email" className="form-label">Email</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="mb-3">
+                <label htmlFor="password" className="form-label">Password</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary auth-btn"
+                disabled={loading}
+              >
+                {loading ? 'Logging in...' : 'Login'}
+              </button>
+              
+              <div className="auth-divider">
+                <span className="auth-divider-text">or</span>
+              </div>
+              
+              <button
+                type="button"
+                className="btn btn-secondary auth-btn"
+                onClick={handleTestLogin}
+                disabled={loading}
+              >
+                Use Test Account
+              </button>
+            </form>
+            
+            <div className="text-center">
+              <p>Don't have an account? <a href="/register" className="auth-link">Register now</a></p>
             </div>
           </div>
         </div>

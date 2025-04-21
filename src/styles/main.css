@@ -1,7 +1,7 @@
 /* Global Styles */
 body {
     font-family: 'Nunito', 'Segoe UI', Roboto, sans-serif;
-    background-color: #FDF9FD;
+    background-color: #fff5f0;
     color: #5D4037;
   }
   
@@ -48,34 +48,34 @@ body {
     border-width: 0.2em;
     width: 2.5rem;
     height: 2.5rem;
-    color: #FF6B98;
+    color: #d46c4e;
   }
   
   /* Alerts */
   .alert {
-    border-radius: 20px;
+    border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     border: none;
   }
   
   .alert-danger {
-    background-color: #FFEBEE;
-    color: #E53935;
+    background-color: #ffeae5;
+    color: #d46c4e;
   }
   
   .alert-success {
-    background-color: #E8F5E9;
-    color: #43A047;
+    background-color: #e8f5e9;
+    color: #4caf50;
   }
   
   .alert-warning {
-    background-color: #FFF8E1;
-    color: #FFA000;
+    background-color: #fff3e0;
+    color: #f57c00;
   }
   
   .alert-info {
-    background-color: #E1F5FE;
-    color: #039BE5;
+    background-color: #fff5f0;
+    color: #8c4a3f;
   }
   
   /* Empty state styling */
@@ -86,43 +86,43 @@ body {
   
   .empty-state-icon {
     font-size: 4rem;
-    color: #F8BBD0;
+    color: #d46c4e;
     margin-bottom: 20px;
   }
   
   .empty-state-text {
-    color: #9C27B0;
+    color: #8c4a3f;
     font-size: 1.1rem;
   }
   
   /* Links */
   a {
-    color: #FF6B98;
+    color: #d46c4e;
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
   }
   
   a:hover {
-    color: #9C27B0;
+    color: #8c4a3f;
     text-decoration: none;
   }
   
   /* Text colors */
   .text-primary {
-    color: #9C27B0 !important;
+    color: #d46c4e !important;
   }
   
   .text-secondary {
-    color: #FF6B98 !important;
+    color: #8c4a3f !important;
   }
   
   .text-muted {
-    color: #B39DDB !important;
+    color: #bba8a3 !important;
   }
   
   /* Headings */
   h1, h2, h3, h4, h5, h6 {
-    color: #9C27B0;
+    color: #d46c4e;
   }
   
   /* Overriding Bootstrap container */
@@ -137,7 +137,7 @@ body {
     bottom: 20px;
     right: 20px;
     font-size: 2rem;
-    color: #F8BBD0;
+    color: #ffe8e0;
     opacity: 0.5;
     z-index: -1;
   }
@@ -148,14 +148,14 @@ body {
   }
   
   ::-webkit-scrollbar-track {
-    background: #FDF9FD;
+    background: #fff5f0;
   }
   
   ::-webkit-scrollbar-thumb {
-    background: #F8BBD0;
+    background: #d46c4e;
     border-radius: 10px;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: #FF6B98;
+    background: #8c4a3f;
   }

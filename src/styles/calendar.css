@@ -5,36 +5,36 @@
   }
   
   .rbc-event {
-    background-color: #FF6B98 !important;
+    background-color: #d46c4e !important;
     border-radius: 8px;
     padding: 2px 5px;
   }
   
   .rbc-event:hover {
-    background-color: #9C27B0 !important;
+    background-color: #8c4a3f !important;
   }
   
   .rbc-today {
-    background-color: #FCE4EC;
+    background-color: #fff5f0;
   }
   
   .rbc-header {
     padding: 10px;
     font-weight: 600;
-    color: #9C27B0;
+    color: #8c4a3f;
   }
   
   .rbc-toolbar button {
-    border-radius: 50px;
+    border-radius: 8px;
   }
   
   .rbc-toolbar button.rbc-active {
-    background-color: #FF6B98;
-    border-color: #FF6B98;
+    background-color: #d46c4e;
+    border-color: #d46c4e;
   }
   
   .rbc-toolbar-label {
     font-weight: 700;
     font-size: 1.2em;
-    color: #9C27B0;
+    color: #8c4a3f;
   }

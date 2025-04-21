@@ -19,7 +19,7 @@ function Navbar() {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav className="navbar navbar-expand-lg">
       <div className="container">
         <Link className="navbar-brand" to="/">Cat Health Tracker</Link>
         
@@ -28,8 +28,9 @@ function Navbar() {
           type="button" 
           data-bs-toggle="collapse" 
           data-bs-target="#navbarNav"
+          style={{ borderColor: '#d46c4e' }}
         >
-          <span className="navbar-toggler-icon"></span>
+          <span className="navbar-toggler-icon" style={{ backgroundColor: '#d46c4e' }}></span>
         </button>
         
         <div className="collapse navbar-collapse" id="navbarNav">
@@ -37,23 +38,23 @@ function Navbar() {
             {isLoggedIn ? (
               <>
                 <li className="nav-item">
-                <Link className="nav-link" to="/">
+                <Link className="nav-link text-secondary" to="/">
                   <i className="bi bi-speedometer2 me-1"></i>Dashboard
                 </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/cats">
+                  <Link className="nav-link text-secondary" to="/cats">
                     <i className="bi bi-house-door me-1"></i>My Cats
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/calendar">
+                  <Link className="nav-link text-secondary" to="/calendar">
                     <i className="bi bi-calendar-week me-1"></i>Health Calendar
                   </Link>
                 </li>
                 <li className="nav-item">
                   <button 
-                    className="nav-link btn btn-link" 
+                    className="nav-link btn btn-link text-secondary" 
                     onClick={handleLogout}
                   >
                     <i className="bi bi-box-arrow-right me-1"></i>Logout
@@ -63,10 +64,10 @@ function Navbar() {
             ) : (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/login">Login</Link>
+                  <Link className="nav-link text-secondary" to="/login">Login</Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/register">Register</Link>
+                  <Link className="nav-link text-secondary" to="/register">Register</Link>
                 </li>
               </>
             )}

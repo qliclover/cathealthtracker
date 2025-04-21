@@ -1,56 +1,123 @@
 /* Forms */
 .form-control {
-    border-radius: 50px;
+    border-radius: 8px;
     padding: 12px 20px;
-    border: 1px solid #ddd;
-    transition: all 0.3s ease;
+    border: 1px solid #ffe8e0;
+    transition: all 0.2s ease;
     box-shadow: none;
+    background-color: #fff;
   }
   
   .form-control:focus {
-    box-shadow: 0 0 0 0.25rem rgba(255, 107, 152, 0.25);
-    border-color: #FF6B98;
+    box-shadow: 0 0 0 2px rgba(212, 108, 78, 0.1);
+    border-color: #d46c4e;
   }
   
   .form-label {
     font-weight: 500;
-    color: #9C27B0;
-    margin-bottom: 0.5rem;
+    color: #8c4a3f;
+    margin-bottom: 0.8rem;
   }
   
   .form-select {
-    border-radius: 50px;
+    border-radius: 8px;
     padding: 12px 20px;
-    border: 1px solid #ddd;
-    transition: all 0.3s ease;
+    border: 1px solid #ffe8e0;
+    transition: all 0.2s ease;
   }
   
   .form-select:focus {
-    box-shadow: 0 0 0 0.25rem rgba(255, 107, 152, 0.25);
-    border-color: #FF6B98;
+    box-shadow: 0 0 0 2px rgba(212, 108, 78, 0.1);
+    border-color: #d46c4e;
   }
   
   /* Login and Register pages */
   .auth-container {
-    margin-top: 80px;
+    margin-top: 40px;
+    margin-bottom: 40px;
   }
   
   .auth-card {
-    max-width: 450px;
+    max-width: 400px;
     margin: 0 auto;
-    padding: 30px;
-    border-radius: 25px !important;
+    padding: 2rem;
+    border-radius: 16px !important;
+    background-color: #fff;
+    border: 1px solid #ffe8e0;
+    box-shadow: 0 4px 20px rgba(212, 108, 78, 0.08);
   }
   
   .auth-title {
     text-align: center;
-    margin-bottom: 30px;
-    color: #9C27B0;
+    margin-bottom: 2rem;
+    color: #d46c4e;
+    font-size: 1.75rem;
+    font-weight: 600;
   }
   
-  .auth-title h2 {
-    font-weight: 700;
-    margin-bottom: 10px;
+  .auth-form {
+    margin-bottom: 1.5rem;
+  }
+
+  .auth-form .form-control {
+    background-color: #fff5f0;
+    border: 1px solid #ffe8e0;
+  }
+
+  .auth-form .form-control:focus {
+    background-color: #fff;
+  }
+
+  .auth-btn {
+    width: 100%;
+    padding: 0.8rem;
+    font-weight: 500;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .auth-link {
+    color: #d46c4e;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .auth-link:hover {
+    color: #c05a3d;
+    text-decoration: underline;
+  }
+
+  .auth-divider {
+    text-align: center;
+    margin: 1.5rem 0;
+    position: relative;
+  }
+
+  .auth-divider::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background-color: #ffe8e0;
+  }
+
+  .auth-divider::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background-color: #ffe8e0;
+  }
+
+  .auth-divider-text {
+    background-color: #fff;
+    padding: 0 1rem;
+    color: #8c4a3f;
+    font-size: 0.9rem;
   }
   
   /* Checkboxes & Radio buttons */
@@ -79,19 +146,19 @@
   /* Form Validation */
   .was-validated .form-control:valid,
   .form-control.is-valid {
-    border-color: #9ACD32;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%239ACD32' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    border-color: #4caf50;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%234caf50' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
   }
   
   .was-validated .form-control:invalid,
   .form-control.is-invalid {
-    border-color: #FF6B98;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23FF6B98'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23FF6B98' stroke='none'/%3e%3c/svg%3e");
+    border-color: #d46c4e;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23d46c4e'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23d46c4e' stroke='none'/%3e%3c/svg%3e");
   }
   
   /* Placeholder text */
   .form-control::placeholder {
-    color: #D1C4E9;
+    color: #bba8a3;
     opacity: 0.7;
   }
   
