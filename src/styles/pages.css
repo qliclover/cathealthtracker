@@ -599,21 +599,60 @@
   margin-bottom: 0.5rem;
 }
 
+.health-record-title-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .health-record-title {
-  color: #2c786c;
+  color: #d46c4e;
   font-weight: 600;
   margin: 0;
 }
 
 .health-record-date {
-  color: #e85d3f;
+  color: #8c4a3f;
   font-size: 0.9rem;
+}
+
+.health-record-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.health-record-btn {
+  background: none;
+  border: none;
+  padding: 0.4rem;
+  border-radius: 6px;
+  color: #8c4a3f;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.health-record-btn:hover {
+  background-color: #fff5f0;
+  color: #d46c4e;
+}
+
+.health-record-btn.delete {
+  color: #e85d3f;
+}
+
+.health-record-btn.delete:hover {
+  background-color: #ffebe8;
+  color: #d4472d;
 }
 
 .health-record-desc {
   color: #4a4a4a;
   font-size: 0.95rem;
   margin: 0;
+  line-height: 1.5;
 }
 
 /* Tasks */

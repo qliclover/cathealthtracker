@@ -108,6 +108,36 @@ function CatDetailsPage() {
     }
   };
 
+  // Delete health record
+  const handleDeleteRecord = async (recordId) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_ENDPOINTS.DELETE_HEALTH_RECORD}/${recordId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+        return;
+      }
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to delete record: ${errorText}`);
+      }
+
+      // Update records list after successful deletion
+      setRecords(records.filter(record => record.id !== recordId));
+    } catch (err) {
+      console.error('Delete record error:', err);
+      setError(err.message);
+    }
+  };
+
   // Navigation helpers
   const handleEditCat = () => navigate(`/cats/${id}/edit`);
   const handleEditInsurance = (iid) => navigate(`/insurance/${iid}/edit`);
@@ -201,10 +231,21 @@ function CatDetailsPage() {
               {records.map(record => (
                 <div key={record.id} className="health-record-item">
                   <div className="health-record-header">
-                    <h3 className="health-record-title">{record.type}</h3>
-                    <span className="health-record-date">
-                      {new Date(record.date).toLocaleDateString()}
-                    </span>
+                    <div className="health-record-title-group">
+                      <h3 className="health-record-title">{record.type}</h3>
+                      <span className="health-record-date">
+                        {new Date(record.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="health-record-actions">
+                      <button 
+                        className="health-record-btn delete"
+                        onClick={() => handleDeleteRecord(record.id)}
+                        title="Delete record"
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    </div>
                   </div>
                   <p className="health-record-desc">{record.description}</p>
                 </div>
