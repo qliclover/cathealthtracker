@@ -181,20 +181,14 @@ function CatDetailsPage() {
               <p><strong>Breed:</strong> {cat.breed}</p>
               <p>
                 <strong>Age:</strong>{' '}
-                {cat.birthdate
+                {cat.birthdate 
                   ? calculateAge(cat.birthdate)
                   : cat.age != null
                     ? `${cat.age} years`
                     : 'Unknown'}
+                    {cat.birthdate && <span className="text-muted ms-2">(Birthdate: {cat.birthdate})</span>}
               </p>
               <p><strong>Weight:</strong> {cat.weight} kg</p>
-
-              {cat.birthdate && (
-                <p>
-                  <strong>Birthdate:</strong> {new Date(cat.birthdate).toLocaleDateString()}{' '}
-                  <span className="badge bg-primary ms-2">{calculateAge(cat.birthdate)}</span>
-                </p>
-              )}
               {cat.description && <p><strong>Description:</strong> {cat.description}</p>}
             </div>
           </div>
