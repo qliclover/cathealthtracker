@@ -15,7 +15,6 @@ function CatDetailsPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDeleteRecord, setConfirmDeleteRecord] = useState(null);
 
-  // Calculate exact age from a birthdate string
   const calculateAge = (birthdate) => {
     const today = new Date();
     const birth = new Date(birthdate);
@@ -27,7 +26,6 @@ function CatDetailsPage() {
     return `${age} years old`;
   };
 
-  // Load cat info, records, insurance
   useEffect(() => {
     const fetchCatDetails = async () => {
       try {
@@ -37,7 +35,6 @@ function CatDetailsPage() {
           return;
         }
 
-        // 1) Cat basic info
         const catRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -52,7 +49,6 @@ function CatDetailsPage() {
         const catData = await catRes.json();
         setCat(catData);
 
-        // 2) Health records
         const recRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/records`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -60,7 +56,6 @@ function CatDetailsPage() {
         const recList = await recRes.json();
         setRecords(Array.isArray(recList) ? recList : []);
 
-        // 3) Insurance
         const insRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/insurance`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -79,15 +74,37 @@ function CatDetailsPage() {
     fetchCatDetails();
   }, [id, navigate]);
 
-  // Toggle delete‑confirmation UI
   const toggleConfirmDelete = () => setConfirmDelete(prev => !prev);
+  const handleOpenDeleteRecord = (recordId) => setConfirmDeleteRecord(recordId);
+  const handleCloseDeleteRecord = () => setConfirmDeleteRecord(null);
 
-  // Toggle delete record confirmation
-  const toggleDeleteRecord = (recordId = null) => {
-    setConfirmDeleteRecord(recordId);
+  const handleDeleteRecord = async (recordId) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_ENDPOINTS.DELETE_RECORD}/${recordId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+        return;
+      }
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Server responded ${res.status}: ${txt}`);
+      }
+      setRecords(records.filter(r => r.id !== recordId));
+      setConfirmDeleteRecord(null);
+    } catch (err) {
+      console.error('Delete record error:', err);
+      setError(err.message);
+    }
   };
 
-  // Delete handler with detailed error
   const handleDeleteCat = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -114,39 +131,6 @@ function CatDetailsPage() {
     }
   };
 
-  // Delete health record
-  const handleDeleteRecord = async (recordId) => {
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch(`${API_ENDPOINTS.DELETE_HEALTH_RECORD}/${recordId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (res.status === 401) {
-        localStorage.removeItem('token');
-        navigate('/login');
-        return;
-      }
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Failed to delete record: ${errorText}`);
-      }
-
-      // Update records list after successful deletion
-      setRecords(records.filter(record => record.id !== recordId));
-      // Close confirmation dialog
-      setConfirmDeleteRecord(null);
-    } catch (err) {
-      console.error('Delete record error:', err);
-      setError(err.message);
-    }
-  };
-
-  // Navigation helpers
   const handleEditCat = () => navigate(`/cats/${id}/edit`);
   const handleEditInsurance = (iid) => navigate(`/insurance/${iid}/edit`);
 
@@ -159,209 +143,179 @@ function CatDetailsPage() {
       </div>
     );
   }
-  if (error) {
-    return <div className="alert alert-danger">{error}</div>;
-  }
-  if (!cat) {
-    return <div className="alert alert-warning">Cat information not found</div>;
-  }
+  if (error) return <div className="alert alert-danger">{error}</div>;
+  if (!cat) return <div className="alert alert-warning">Cat information not found</div>;
 
   return (
     <div className="container mt-4">
-      {/* Cat Info Section */}
-      <div className="cat-details-header">
-        <h1 className="cat-details-title">{cat.name}</h1>
-        <div className="cat-details-actions">
-          <button className="cat-action-btn edit" onClick={handleEditCat}>
-            <i className="bi bi-pencil-square"></i>Edit
-          </button>
-          <button className="cat-action-btn delete" onClick={toggleConfirmDelete}>
-            <i className="bi bi-trash"></i>Delete
-          </button>
-        </div>
-      </div>
-
-      <div className="cat-details-section">
-        <img
-          src={cat.imageUrl || "https://placehold.co/400x300?text=Cat+Photo"}
-          alt={cat.name}
-          className="cat-details-photo"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = "https://placehold.co/400x300?text=Cat+Photo";
-          }}
-        />
-        <div className="cat-info-grid">
-          <div className="cat-info-item">
-            <span className="cat-info-label">Breed</span>
-            <span className="cat-info-value">{cat.breed}</span>
-          </div>
-          <div className="cat-info-item">
-            <span className="cat-info-label">Birthdate</span>
-            <div>
-              <span className="cat-info-value">
-                {new Date(cat.birthdate).toLocaleDateString()}
-              </span>
-              <span className="cat-info-badge ms-2">
-                {calculateAge(cat.birthdate)}
-              </span>
-            </div>
-          </div>
-          <div className="cat-info-item">
-            <span className="cat-info-label">Weight</span>
-            <span className="cat-info-value">{cat.weight} kg</span>
-          </div>
-          {cat.description && (
-            <div className="cat-info-item">
-              <span className="cat-info-label">Description</span>
-              <span className="cat-info-value">{cat.description}</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Health Records Section */}
-      <div className="cat-details-section">
-        <div className="section-header">
-          <h2 className="section-title">
-            <i className="bi bi-journal-medical"></i>
-            Health Records
-          </h2>
-          <Link to={`/cats/${id}/records/add`} className="add-record-btn">
-            Add Record
-          </Link>
-        </div>
-        <div className="section-body">
-          {records.length === 0 ? (
-            <div className="section-empty">No health records yet.</div>
-          ) : (
-            <div className="health-record-list">
-              {records.map(record => (
-                <div key={record.id} className="health-record-item">
-                  <div className="health-record-header">
-                    <div className="health-record-title-group">
-                      <h3 className="health-record-title">{record.type}</h3>
-                      <span className="health-record-date">
-                        {new Date(record.date).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="health-record-actions">
-                      <button 
-                        className="health-record-btn delete"
-                        onClick={() => toggleDeleteRecord(record.id)}
-                        title="Delete record"
-                      >
-                        <i className="bi bi-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-                  <p className="health-record-desc">{record.description}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Insurance Section */}
-      <div className="cat-details-section">
-        <div className="section-header">
-          <h2 className="section-title">
-            <i className="bi bi-shield-check"></i>
-            Insurance
-          </h2>
-          {insurance.length === 0 && (
-            <Link to={`/cats/${id}/insurance/add`} className="add-insurance-btn">
-              Add Insurance
-            </Link>
-          )}
-        </div>
-        <div className="section-body">
-          {insurance.length === 0 ? (
-            <div className="section-empty">No insurance information yet.</div>
-          ) : (
-            insurance.map(ins => (
-              <div key={ins.id} className="insurance-card">
-                <div className="insurance-header">
-                  <h3 className="insurance-company">{ins.company}</h3>
-                  <button
-                    className="insurance-edit-btn"
-                    onClick={() => handleEditInsurance(ins.id)}
-                  >
-                    <i className="bi bi-pencil"></i>
+      <div className="row mb-4">
+        {/* Left Column */}
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h2>{cat.name}</h2>
+                <div>
+                  <button className="btn btn-outline-primary me-2" onClick={handleEditCat}>
+                    <i className="bi bi-pencil-square me-2"></i>Edit
+                  </button>
+                  <button className="btn btn-outline-danger" onClick={toggleConfirmDelete}>
+                    <i className="bi bi-trash me-2"></i>Delete
                   </button>
                 </div>
-                <div className="insurance-grid">
-                  <div className="insurance-item">
-                    <span className="insurance-label">Policy Number</span>
-                    <span className="insurance-value">{ins.policyNumber}</span>
-                  </div>
-                  <div className="insurance-item">
-                    <span className="insurance-label">Period</span>
-                    <span className="insurance-value">
-                      {new Date(ins.startDate).toLocaleDateString()} - 
-                      {new Date(ins.endDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="insurance-item">
-                    <span className="insurance-label">Premium</span>
-                    <span className="insurance-value">${ins.premium}</span>
-                  </div>
-                  <div className="insurance-item">
-                    <span className="insurance-label">Coverage</span>
-                    <span className="insurance-value">{ins.coverage}</span>
-                  </div>
+              </div>
+
+              <div className="text-center mb-3">
+                <img
+                  src={cat.imageUrl || "https://placehold.co/400x300?text=Cat+Photo"}
+                  alt={cat.name}
+                  style={{ maxHeight: '200px', objectFit: 'contain', borderRadius: '8px' }}
+                  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x300?text=Cat+Photo"; }}
+                />
+              </div>
+
+              <p><strong>Breed:</strong> {cat.breed}</p>
+              {cat.birthdate ? (
+                <p>
+                  <strong>Birthdate:</strong> {new Date(cat.birthdate).toLocaleDateString()}
+                  <span className="badge bg-primary ms-2">{calculateAge(cat.birthdate)}</span>
+                </p>
+              ) : (
+                <p><strong>Age:</strong> {cat.age != null ? `${cat.age} years` : 'Unknown'}</p>
+              )}
+              <p><strong>Weight:</strong> {cat.weight} kg</p>
+              {cat.description && <p><strong>Description:</strong> {cat.description}</p>}
+            </div>
+          </div>
+
+          {confirmDelete && (
+            <div className="card mb-4 border-danger mt-3">
+              <div className="card-body">
+                <h5 className="card-title text-danger">Delete Cat</h5>
+                <p>Are you sure you want to delete {cat.name}? This cannot be undone.</p>
+                <div className="d-flex justify-content-end">
+                  <button className="btn btn-outline-secondary me-2" onClick={toggleConfirmDelete}>Cancel</button>
+                  <button className="btn btn-danger" onClick={handleDeleteCat}>Delete</button>
                 </div>
               </div>
-            ))
+            </div>
           )}
+
+          {/* Insurance Section */}
+          <div className="card mt-4">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h3>Insurance</h3>
+                <Link to={`/cats/${id}/insurance/add`} className="btn btn-primary">
+                  <i className="bi bi-shield-plus me-2"></i>Add Insurance
+                </Link>
+              </div>
+              {insurance.length === 0 ? (
+                <p className="text-muted">No insurance available</p>
+              ) : (
+                <div className="list-group">
+                  {insurance.map(ins => (
+                    <div key={ins.id} className="list-group-item">
+                      <div className="d-flex justify-content-between align-items-start">
+                        <div>
+                          <h5>{ins.provider}</h5>
+                          <p className="mb-1"><strong>Policy:</strong> {ins.policyNumber}</p>
+                          <p className="mb-1"><strong>Period:</strong> {new Date(ins.startDate).toLocaleDateString()} – {new Date(ins.endDate).toLocaleDateString()}</p>
+                          {ins.premium != null && <p><strong>Premium:</strong> ${ins.premium.toFixed(2)}</p>}
+                          {ins.coverage && <p><strong>Coverage:</strong> {ins.coverage}</p>}
+                        </div>
+                        <button className="btn btn-sm btn-outline-secondary" onClick={() => handleEditInsurance(ins.id)}>
+                          <i className="bi bi-pencil me-1"></i>Edit
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Records */}
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h3>Health Records</h3>
+                <Link to={`/cats/${id}/records/add`} className="btn btn-primary">
+                  <i className="bi bi-plus-circle me-2"></i>Add Record
+                </Link>
+              </div>
+              {records.length === 0 ? (
+                <div className="text-center text-muted">No health records</div>
+              ) : (
+                <div className="list-group">
+                  {records.map(record => (
+                    <div key={record.id} className="list-group-item">
+                      <div className="d-flex justify-content-between align-items-start">
+                        <div>
+                          <span className="badge bg-info">{record.type}</span>
+                          <small className="text-muted ms-2">
+                            <i className="bi bi-calendar3 me-1"></i>
+                            {new Date(record.date).toLocaleDateString()}
+                          </small>
+                          <p className="mt-1 mb-1">{record.description}</p>
+                          {record.notes && (
+                            <small className="text-muted">
+                              <i className="bi bi-journal-text me-1"></i>Notes: {record.notes}
+                            </small>
+                          )}
+                          {record.fileUrl && (
+                            <div className="mt-2">
+                              <a
+                                href={record.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-sm btn-outline-info"
+                              >
+                                <i className="bi bi-file-earmark me-1"></i>View Attachment
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <Link to={`/records/${record.id}/edit`} className="btn btn-sm btn-outline-secondary me-2">
+                            <i className="bi bi-pencil me-1"></i>Edit
+                          </Link>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => handleOpenDeleteRecord(record.id)}
+                          >
+                            <i className="bi bi-trash me-1"></i>Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Delete Record Confirmation */}
-      {confirmDeleteRecord && (
-        <div className="delete-confirmation">
-          <h3 className="delete-confirmation-title">Delete Health Record</h3>
-          <p className="delete-confirmation-text">
-            Are you sure you want to delete this health record? This cannot be undone.
-          </p>
-          <div className="delete-confirmation-actions">
-            <button
-              className="cat-action-btn edit"
-              onClick={() => toggleDeleteRecord(null)}
-            >
-              Cancel
-            </button>
-            <button
-              className="cat-action-btn delete"
-              onClick={() => handleDeleteRecord(confirmDeleteRecord)}
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation */}
-      {confirmDelete && (
-        <div className="delete-confirmation">
-          <h3 className="delete-confirmation-title">Delete Cat</h3>
-          <p className="delete-confirmation-text">
-            Are you sure you want to delete {cat.name}? This cannot be undone.
-          </p>
-          <div className="delete-confirmation-actions">
-            <button
-              className="cat-action-btn edit"
-              onClick={toggleConfirmDelete}
-            >
-              Cancel
-            </button>
-            <button
-              className="cat-action-btn delete"
-              onClick={handleDeleteCat}
-            >
-              Delete
-            </button>
+      {/* Delete Record Modal */}
+      {confirmDeleteRecord !== null && (
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Delete Health Record</h5>
+                <button type="button" className="btn-close" onClick={handleCloseDeleteRecord}></button>
+              </div>
+              <div className="modal-body">
+                <p>Are you sure you want to delete this health record? This action cannot be undone.</p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline-secondary" onClick={handleCloseDeleteRecord}>Cancel</button>
+                <button type="button" className="btn btn-danger" onClick={() => handleDeleteRecord(confirmDeleteRecord)}>Delete</button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -27,7 +27,8 @@ const CAT_ENDPOINTS = {
 const HEALTH_RECORD_ENDPOINTS = {
   GET_CAT_RECORDS: `${API_BASE_URL}/cats`,
   CREATE_RECORD: `${API_BASE_URL}/cats`,
-  UPDATE_RECORD: `${API_BASE_URL}/records`
+  UPDATE_RECORD: `${API_BASE_URL}/records`,
+  DELETE_RECORD: `${API_BASE_URL}/records`
 };
 
 // Insurance endpoints

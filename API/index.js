@@ -360,6 +360,52 @@ app.get('/api/cats/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Delete a health record
+app.delete('/api/records/:id', authenticateToken, async (req, res) => {
+  try {
+    const recordId = parseInt(req.params.id);
+
+    // Check if the record exists and belongs to a cat owned by the current user
+    const record = await prisma.healthRecord.findUnique({
+      where: { id: recordId },
+      include: { cat: true }
+    }).catch(async (error) => {
+      console.error('Database query error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.healthRecord.findUnique({
+        where: { id: recordId },
+        include: { cat: true }
+      });
+    });
+
+    if (!record) {
+      return res.status(404).json({ message: 'Health record not found' });
+    }
+
+    // Verify that the record belongs to a cat owned by the authenticated user
+    if (record.cat.ownerId !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to delete this record' });
+    }
+
+    await prisma.healthRecord.delete({
+      where: { id: recordId }
+    }).catch(async (error) => {
+      console.error('Database operation error, trying to reconnect:', error);
+      await connectWithRetry();
+      
+      return await prisma.healthRecord.delete({
+        where: { id: recordId }
+      });
+    });
+
+    res.json({ message: 'Health record deleted successfully' });
+  } catch (error) {
+    console.error('Delete health record error:', error);
+    res.status(500).json({ message: 'Failed to delete health record' });
+  }
+});
+
 // Create a cat with Cloudinary upload
 app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res) => {
   try {
