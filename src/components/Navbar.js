@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import './styles/navbar.css';
 
 function Navbar() {
   const navigate = useNavigate();
@@ -19,15 +20,21 @@ function Navbar() {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav className="navbar navbar-expand-lg">
       <div className="container">
-        <Link className="navbar-brand" to="/">Cat Health Tracker</Link>
+        <Link className="navbar-brand" to="/">
+          <i className="bi bi-heart-pulse me-2"></i>
+          Cat Health Tracker
+        </Link>
         
         <button 
           className="navbar-toggler" 
           type="button" 
           data-bs-toggle="collapse" 
           data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
         >
           <span className="navbar-toggler-icon"></span>
         </button>
@@ -37,36 +44,46 @@ function Navbar() {
             {isLoggedIn ? (
               <>
                 <li className="nav-item">
-                <Link className="nav-link" to="/">
-                  <i className="bi bi-speedometer2 me-1"></i>Dashboard
-                </Link>
+                  <Link className="nav-link" to="/">
+                    <i className="bi bi-speedometer2"></i>
+                    Dashboard
+                  </Link>
                 </li>
                 <li className="nav-item">
                   <Link className="nav-link" to="/cats">
-                    <i className="bi bi-house-door me-1"></i>My Cats
+                    <i className="bi bi-house-door"></i>
+                    My Cats
                   </Link>
                 </li>
                 <li className="nav-item">
                   <Link className="nav-link" to="/calendar">
-                    <i className="bi bi-calendar-week me-1"></i>Health Calendar
+                    <i className="bi bi-calendar-week"></i>
+                    Health Calendar
                   </Link>
                 </li>
                 <li className="nav-item">
                   <button 
-                    className="nav-link btn btn-link" 
+                    className="nav-link btn-link" 
                     onClick={handleLogout}
                   >
-                    <i className="bi bi-box-arrow-right me-1"></i>Logout
+                    <i className="bi bi-box-arrow-right"></i>
+                    Logout
                   </button>
                 </li>
               </>
             ) : (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/login">Login</Link>
+                  <Link className="nav-link" to="/login">
+                    <i className="bi bi-box-arrow-in-right"></i>
+                    Login
+                  </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/register">Register</Link>
+                  <Link className="nav-link" to="/register">
+                    <i className="bi bi-person-plus"></i>
+                    Register
+                  </Link>
                 </li>
               </>
             )}
