@@ -20,14 +20,14 @@ function LoginPage() {
     }));
   };
 
-  const handleTestLogin = () => {
-    setFormData({
-      email: 'test2@example.com',
-      password: 'password123'
-    });
-    // Auto submit form
-    handleSubmit(new Event('submit'));
-  };
+  // const handleTestLogin = () => {
+  //   setFormData({
+  //     email: 'test2@example.com',
+  //     password: 'password123'
+  //   });
+  //   // Auto submit form
+  //   handleSubmit(new Event('submit'));
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -113,14 +113,14 @@ function LoginPage() {
                 <span className="auth-divider-text">or</span>
               </div>
               
-              <button
+              {/* <button
                 type="button"
                 className="btn btn-secondary auth-btn"
                 onClick={handleTestLogin}
                 disabled={loading}
               >
                 Use Test Account
-              </button>
+              </button> */}
             </form>
             
             <div className="text-center">
