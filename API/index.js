@@ -364,6 +364,7 @@ app.get('/api/cats/:id', authenticateToken, async (req, res) => {
 app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res) => {
   try {
     const { name, breed, weight, birthdate } = req.body;
+    console.log("Received birthdate:", birthdate); 
     
     const imageUrl = req.file ? req.file.path : defaultImageUrl;
 
@@ -419,7 +420,7 @@ app.post('/api/cats', authenticateToken, upload.single('image'), async (req, res
 // Update cat information with Cloudinary upload
 app.put('/api/cats/:id', authenticateToken, upload.single('image'), async (req, res) => {
   try {
-    const { name, breed, age, weight, birthdate } = req.body;
+    const { name, breed, age, weight, birthdate } = req.body;console.log("Update with birthdate:", birthdate);
     const catId = parseInt(req.params.id);
 
     // Check if the cat exists and belongs to current user

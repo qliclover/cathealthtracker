@@ -87,7 +87,7 @@ function AddCatPage() {
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
       formDataToSend.append('breed', formData.breed);
-      formDataToSend.append('age', formData.age);
+      formDataToSend.append('birthdate', formData.birthdate);
       formDataToSend.append('weight', formData.weight);
       
       if (image) {

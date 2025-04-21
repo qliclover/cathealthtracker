@@ -137,9 +137,8 @@ function EditCatPage() {
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
       formDataToSend.append('breed', formData.breed);
-      formDataToSend.append('age', formData.age);
       formDataToSend.append('weight', formData.weight);
-      formDataToSend.append('birthdate', formData.birthdate); // Include birthdate
+      formDataToSend.append('birthdate', formData.birthdate); 
       formDataToSend.append('description', formData.description);
       
       if (image) {
