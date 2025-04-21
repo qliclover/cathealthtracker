@@ -45,7 +45,7 @@ function RegisterPage() {
       localStorage.setItem('token', data.token);
       
       // Navigate to cats list page
-      navigate('/cats');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message);
     } finally {
