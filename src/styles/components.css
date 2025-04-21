@@ -29,24 +29,36 @@
   }
   
   /* Buttons */
-  .btn {
-    border-radius: 8px;
-    padding: 0.6rem 1.5rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-  }
-  
   .btn-primary {
-    background-color: #d46c4e;
-    border: none;
-    color: white;
-    box-shadow: 0 2px 4px rgba(212, 108, 78, 0.2);
+    background-color: #d46c4e !important;
+    border-color: #d46c4e !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(212, 108, 78, 0.2) !important;
   }
   
   .btn-primary:hover {
-    background-color: #c05a3d;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(212, 108, 78, 0.3);
+    background-color: #c05a3d !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(212, 108, 78, 0.3) !important;
+  }
+  
+  .btn-outline-primary {
+    border: 1px solid #d46c4e !important;
+    color: #d46c4e !important;
+    background: transparent !important;
+  }
+  
+  .btn-outline-primary:hover {
+    background-color: #d46c4e !important;
+    color: white !important;
+  }
+
+  .navbar-dark.bg-primary {
+    background-color: #d46c4e !important;
+  }
+
+  .badge.bg-primary {
+    background-color: #d46c4e !important;
   }
   
   .btn-outline-primary {
