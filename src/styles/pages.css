@@ -58,12 +58,11 @@
     align-items: center;
     margin-bottom: 2rem;
     padding-bottom: 1rem;
-    border-bottom: 2px solid #fff5f0;
+    border-bottom: 1px solid #d46c4e;
   }
   
   .details-title {
-    font-size: 2.5rem;
-    font-weight: 700;
+    font-size: 2rem;
     color: #d46c4e;
   }
   
@@ -73,33 +72,21 @@
   }
   
   .btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
     font-size: 1rem;
-    font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s ease;
   }
   
   .btn-edit {
-    background: #fff5f0;
-    border: none;
-    color: #d46c4e;
-  }
-  
-  .btn-edit:hover {
     background: #d46c4e;
+    border: none;
     color: white;
   }
   
   .btn-delete {
-    background: #fff0f0;
-    border: none;
-    color: #e85d3f;
-  }
-  
-  .btn-delete:hover {
     background: #e85d3f;
+    border: none;
     color: white;
   }
   
@@ -109,17 +96,13 @@
     grid-template-columns: 300px 1fr;
     gap: 2rem;
     margin-bottom: 2rem;
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
   }
   
   .cat-photo {
     width: 100%;
     height: 300px;
     object-fit: cover;
-    border-radius: 12px;
-    border: 4px solid white;
+    border-radius: 4px;
   }
   
   .info-grid {
@@ -129,22 +112,20 @@
   }
   
   .info-item {
-    background: #fff5f0;
-    padding: 1.5rem;
-    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #d46c4e;
+    border-radius: 4px;
   }
   
   .info-label {
     font-size: 0.9rem;
     color: #8c4a3f;
-    font-weight: 600;
     margin-bottom: 0.5rem;
   }
   
   .info-value {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     color: #d46c4e;
-    font-weight: 600;
   }
   
   .age-badge {
@@ -159,44 +140,39 @@
   
   /* Records Section */
   .section {
-    background: white;
-    border-radius: 12px;
     margin-bottom: 2rem;
+    border: 1px solid #d46c4e;
+    border-radius: 4px;
   }
   
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem 2rem;
-    background: #fff5f0;
-    border-radius: 12px 12px 0 0;
+    padding: 1rem;
+    background: #d46c4e;
+    color: white;
   }
   
   .section-title {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: #d46c4e;
+    font-size: 1.2rem;
+    color: white;
   }
   
   .btn-add {
-    background: #d46c4e;
-    color: white;
+    background: white;
+    color: #d46c4e;
     border: none;
   }
   
-  .btn-add:hover {
-    background: #b85a42;
-  }
-  
   .section-content {
-    padding: 1.5rem;
+    padding: 1rem;
   }
   
   .record-item {
-    border: 1px solid #fff5f0;
-    border-radius: 8px;
-    padding: 1.5rem;
+    border: 1px solid #d46c4e;
+    border-radius: 4px;
+    padding: 1rem;
     margin-bottom: 1rem;
   }
   
@@ -210,8 +186,10 @@
   .record-type {
     display: inline-block;
     padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border-radius: 4px;
     font-size: 0.9rem;
+    background: #d46c4e;
+    color: white;
   }
   
   .type-vaccination {
@@ -231,8 +209,7 @@
   
   /* Insurance Section */
   .insurance-company {
-    font-size: 1.4rem;
-    font-weight: 600;
+    font-size: 1.2rem;
     color: #d46c4e;
   }
   
@@ -243,9 +220,9 @@
   }
   
   .insurance-item {
-    background: #fff5f0;
-    padding: 1.5rem;
-    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #d46c4e;
+    border-radius: 4px;
   }
   
   /* Responsive */
