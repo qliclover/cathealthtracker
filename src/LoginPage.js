@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from './config';
-import './styles/auth.css';
 
 
 function LoginPage() {
