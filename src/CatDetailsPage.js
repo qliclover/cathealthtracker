@@ -7,7 +7,6 @@ function CatDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // State for cat info, records, insurance, and UI
   const [cat, setCat] = useState(null);
   const [records, setRecords] = useState([]);
   const [insurance, setInsurance] = useState([]);
@@ -16,15 +15,15 @@ function CatDetailsPage() {
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Helper to truncate long text
+  // Truncate long text
   const truncate = (text, limit) =>
     text && text.length > limit ? text.slice(0, limit) + '…' : text;
 
-  // Toggle description expand/collapse
+  // Toggle expanded/collapsed description
   const toggleExpand = (recordId) =>
     setExpandedRecords(prev => ({ ...prev, [recordId]: !prev[recordId] }));
 
-  // Calculate age from birthdate
+  // Calculate exact age from a birthdate string
   const calculateAge = (birthdate) => {
     const today = new Date();
     const birth = new Date(birthdate);
@@ -36,7 +35,7 @@ function CatDetailsPage() {
     return `${age} years old`;
   };
 
-  // Fetch cat details, records, and insurance
+  // Load cat info, records, insurance
   useEffect(() => {
     const fetchCatDetails = async () => {
       try {
@@ -46,7 +45,7 @@ function CatDetailsPage() {
           return;
         }
 
-        // Fetch basic cat info
+        // 1) Cat basic info
         const catRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -61,7 +60,7 @@ function CatDetailsPage() {
         const catData = await catRes.json();
         setCat(catData);
 
-        // Fetch health records
+        // 2) Health records
         const recRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/records`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -69,7 +68,7 @@ function CatDetailsPage() {
         const recList = await recRes.json();
         setRecords(Array.isArray(recList) ? recList : []);
 
-        // Fetch insurance info
+        // 3) Insurance
         const insRes = await fetch(`${API_ENDPOINTS.GET_CAT}/${id}/insurance`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -77,6 +76,7 @@ function CatDetailsPage() {
           const insList = await insRes.json();
           setInsurance(Array.isArray(insList) ? insList : []);
         }
+
       } catch (err) {
         setError(err.message);
       } finally {
@@ -87,10 +87,10 @@ function CatDetailsPage() {
     fetchCatDetails();
   }, [id, navigate]);
 
-  // Toggle delete confirmation card
+  // Toggle delete‑confirmation UI
   const toggleConfirmDelete = () => setConfirmDelete(prev => !prev);
 
-  // Delete cat handler with detailed error reporting
+  // Delete handler with detailed error
   const handleDeleteCat = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -102,16 +102,14 @@ function CatDetailsPage() {
         }
       });
       if (res.status === 401) {
-        // Unauthorized → force login
         localStorage.removeItem('token');
         navigate('/login');
         return;
       }
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Server responded ${res.status}: ${text}`);
+        const txt = await res.text();
+        throw new Error(`Server responded ${res.status}: ${txt}`);
       }
-      // Success → go back to list
       navigate('/cats');
     } catch (err) {
       console.error('Delete cat error:', err);
@@ -119,12 +117,12 @@ function CatDetailsPage() {
     }
   };
 
-  // Navigate to edit pages
+  // Navigation helpers
   const handleEditCat = () => navigate(`/cats/${id}/edit`);
   const handleAddRecord = () => navigate(`/cats/${id}/records/add`);
-  const handleEditRecord = (recordId) => navigate(`/records/${recordId}/edit`);
+  const handleEditRecord = (rid) => navigate(`/records/${rid}/edit`);
   const handleAddInsurance = () => navigate(`/cats/${id}/insurance/add`);
-  const handleEditInsurance = (insId) => navigate(`/insurance/${insId}/edit`);
+  const handleEditInsurance = (iid) => navigate(`/insurance/${iid}/edit`);
 
   if (loading) {
     return (
@@ -145,7 +143,7 @@ function CatDetailsPage() {
   return (
     <div className="container mt-4">
       <div className="row">
-        {/* Cat Basics */}
+        {/* Cat Info */}
         <div className="col-md-6">
           <div className="card mb-4">
             <div className="card-body">
@@ -167,7 +165,7 @@ function CatDetailsPage() {
                     src={cat.imageUrl}
                     alt={cat.name}
                     style={{ maxHeight: '200px', objectFit: 'contain', borderRadius: '8px' }}
-                    onError={e => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x300?text=Cat+Photo'; }}
+                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x300?text=Cat+Photo'; }}
                   />
                 </div>
               ) : (
@@ -181,8 +179,16 @@ function CatDetailsPage() {
               )}
 
               <p><strong>Breed:</strong> {cat.breed}</p>
-              <p><strong>Age:</strong> {cat.age} years</p>
+              <p>
+                <strong>Age:</strong>{' '}
+                {cat.birthdate
+                  ? calculateAge(cat.birthdate)
+                  : cat.age != null
+                    ? `${cat.age} years`
+                    : 'Unknown'}
+              </p>
               <p><strong>Weight:</strong> {cat.weight} kg</p>
+
               {cat.birthdate && (
                 <p>
                   <strong>Birthdate:</strong> {new Date(cat.birthdate).toLocaleDateString()}{' '}
@@ -198,7 +204,7 @@ function CatDetailsPage() {
             <div className="card mb-4 border-danger">
               <div className="card-body">
                 <h5 className="card-title text-danger">Delete Cat</h5>
-                <p>Are you sure you want to delete {cat.name}? This action cannot be undone.</p>
+                <p>Are you sure you want to delete {cat.name}? This cannot be undone.</p>
                 <div className="d-flex justify-content-end">
                   <button className="btn btn-outline-secondary me-2" onClick={toggleConfirmDelete}>
                     Cancel
@@ -221,30 +227,26 @@ function CatDetailsPage() {
                 </button>
               </div>
               {insurance.length === 0 ? (
-                <p className="text-muted">No insurance information available</p>
+                <p className="text-muted">No insurance available</p>
               ) : (
                 <div className="list-group">
-                  {insurance.map(policy => (
-                    <div key={policy.id} className="list-group-item">
+                  {insurance.map(pol => (
+                    <div key={pol.id} className="list-group-item">
                       <div className="d-flex justify-content-between align-items-start">
                         <div>
-                          <div className="d-flex align-items-center mb-1">
-                            <h5 className="mb-0">{policy.provider}</h5>
-                          </div>
-                          <p className="mb-1"><strong>Policy:</strong> {policy.policyNumber}</p>
+                          <h5>{pol.provider}</h5>
+                          <p className="mb-1"><strong>Policy:</strong> {pol.policyNumber}</p>
                           <p className="mb-1">
-                            <strong>Coverage Period:</strong>{' '}
-                            {new Date(policy.startDate).toLocaleDateString()} –{' '}
-                            {new Date(policy.endDate).toLocaleDateString()}
+                            <strong>Period:</strong>{' '}
+                            {new Date(pol.startDate).toLocaleDateString()} –{' '}
+                            {new Date(pol.endDate).toLocaleDateString()}
                           </p>
-                          {policy.premium != null && (
-                            <p className="mb-1"><strong>Premium:</strong> ${policy.premium.toFixed(2)}</p>
-                          )}
-                          {policy.coverage && <p className="mb-1"><strong>Coverage:</strong> {policy.coverage}</p>}
+                          {pol.premium != null && <p><strong>Premium:</strong> ${pol.premium.toFixed(2)}</p>}
+                          {pol.coverage && <p><strong>Coverage:</strong> {pol.coverage}</p>}
                         </div>
                         <button
                           className="btn btn-sm btn-outline-secondary"
-                          onClick={() => handleEditInsurance(policy.id)}
+                          onClick={() => handleEditInsurance(pol.id)}
                         >
                           <i className="bi bi-pencil me-1"></i>Edit
                         </button>
@@ -268,37 +270,35 @@ function CatDetailsPage() {
                 </button>
               </div>
               {records.length === 0 ? (
-                <div className="text-center text-muted">No health records yet</div>
+                <div className="text-center text-muted">No health records</div>
               ) : (
                 <div className="list-group">
-                  {records.map(record => (
-                    <div key={record.id} className="list-group-item">
+                  {records.map(rec => (
+                    <div key={rec.id} className="list-group-item">
                       <div className="d-flex justify-content-between align-items-start">
                         <div>
-                          <div className="mb-1">
-                            <span className="badge bg-info">{record.type}</span>
-                          </div>
-                          <small className="text-muted">
+                          <span className="badge bg-info">{rec.type}</span>
+                          <small className="text-muted ms-2">
                             <i className="bi bi-calendar3 me-1"></i>
-                            {new Date(record.date).toLocaleDateString()}
+                            {new Date(rec.date).toLocaleDateString()}
                           </small>
                           <p className="mt-1 mb-1">
-                            {expandedRecords[record.id] ? record.description : truncate(record.description, 100)}
-                            {record.description.length > 100 && (
-                              <button className="btn btn-link p-0 ms-2" onClick={() => toggleExpand(record.id)}>
-                                {expandedRecords[record.id] ? 'Show less' : 'Read more'}
+                            {expandedRecords[rec.id] ? rec.description : truncate(rec.description, 100)}
+                            {rec.description.length > 100 && (
+                              <button className="btn btn-link p-0 ms-2" onClick={() => toggleExpand(rec.id)}>
+                                {expandedRecords[rec.id] ? 'Show less' : 'Read more'}
                               </button>
                             )}
                           </p>
-                          {record.notes && (
+                          {rec.notes && (
                             <small className="text-muted">
-                              <i className="bi bi-journal-text me-1"></i>Notes: {record.notes}
+                              <i className="bi bi-journal-text me-1"></i>Notes: {rec.notes}
                             </small>
                           )}
-                          {record.fileUrl && (
+                          {rec.fileUrl && (
                             <div className="mt-2">
                               <a
-                                href={record.fileUrl}
+                                href={rec.fileUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="btn btn-sm btn-outline-info"
@@ -308,10 +308,7 @@ function CatDetailsPage() {
                             </div>
                           )}
                         </div>
-                        <button
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={() => handleEditRecord(record.id)}
-                        >
+                        <button className="btn btn-sm btn-outline-secondary" onClick={() => handleEditRecord(rec.id)}>
                           <i className="bi bi-pencil me-1"></i>Edit
                         </button>
                       </div>
