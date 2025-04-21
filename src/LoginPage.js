@@ -5,27 +5,17 @@ import './styles/auth.css';
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleTestLogin = () => {
-    setFormData({
-      email: 'test2@example.com',
-      password: 'password123'
-    });
-    // Auto submit form
+    setFormData({ email: 'test2@example.com', password: 'password123' });
     handleSubmit(new Event('submit'));
   };
 
@@ -35,24 +25,16 @@ function LoginPage() {
     setError('');
 
     try {
-      const response = await fetch(API_ENDPOINTS.LOGIN, {
+      const res = await fetch(API_ENDPOINTS.LOGIN, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
-      const data = await response.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Login failed');
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      // Save token to localStorage
       localStorage.setItem('token', data.token);
-      
-      // Navigate to cats list page
       navigate('/cats');
     } catch (err) {
       setError(err.message);
@@ -62,68 +44,52 @@ function LoginPage() {
   };
 
   return (
-    <div className="auth-container">
+    <div className="container mt-5">
       <div className="auth-card">
-        <div className="auth-title">
-          <h2>Welcome Back</h2>
-          <p>Sign in to continue</p>
-        </div>
-        
-        {error && (
-          <div className="auth-alert auth-alert-danger" role="alert">
-            {error}
-          </div>
-        )}
+        <h2 className="auth-title">Login</h2>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email" className="form-label">Email</label>
-            <input
-              type="email"
-              className="form-control"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              placeholder="Enter your email"
-            />
-          </div>
+        {error && <div className="alert alert-danger">{error}</div>}
 
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-control"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              placeholder="Enter your password"
-            />
-          </div>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="email"
+            name="email"
+            className="auth-input"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            className="auth-input"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
 
           <button
             type="submit"
-            className="btn btn-primary"
+            className="auth-btn"
             disabled={loading}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Logging in...' : 'Login'}
           </button>
-          
+
           <button
             type="button"
-            className="btn btn-secondary"
+            className="auth-btn-outline mt-2"
             onClick={handleTestLogin}
             disabled={loading}
           >
             Use Test Account
           </button>
         </form>
-        
-        <div className="auth-links">
-          <p>Don't have an account? <a href="/register">Sign up</a></p>
+
+        <div className="mt-3 text-center">
+          <p>Don't have an account? <a href="/register">Register now</a></p>
         </div>
       </div>
     </div>

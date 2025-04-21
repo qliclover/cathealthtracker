@@ -15,10 +15,7 @@ function RegisterPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -29,9 +26,7 @@ function RegisterPage() {
     try {
       const response = await fetch(API_ENDPOINTS.REGISTER, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
@@ -41,10 +36,7 @@ function RegisterPage() {
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Save token to localStorage
       localStorage.setItem('token', data.token);
-      
-      // Navigate to cats list page
       navigate('/cats');
     } catch (err) {
       setError(err.message);
@@ -54,73 +46,52 @@ function RegisterPage() {
   };
 
   return (
-    <div className="auth-container">
+    <div className="container mt-5">
       <div className="auth-card">
-        <div className="auth-title">
-          <h2>Create Account</h2>
-          <p>Join us to track your cat's health</p>
-        </div>
-        
-        {error && (
-          <div className="auth-alert auth-alert-danger" role="alert">
-            {error}
-          </div>
-        )}
+        <h2 className="auth-title">Register</h2>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="name" className="form-label">Name</label>
-            <input
-              type="text"
-              className="form-control"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              placeholder="Enter your name"
-            />
-          </div>
+        {error && <div className="alert alert-danger">{error}</div>}
 
-          <div className="form-group">
-            <label htmlFor="email" className="form-label">Email</label>
-            <input
-              type="email"
-              className="form-control"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              placeholder="Enter your email"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-control"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              placeholder="Create a password"
-            />
-          </div>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="name"
+            className="auth-input"
+            placeholder="Name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="email"
+            name="email"
+            className="auth-input"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            className="auth-input"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
 
           <button
             type="submit"
-            className="btn btn-primary"
+            className="auth-btn"
             disabled={loading}
           >
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? 'Registering...' : 'Register'}
           </button>
         </form>
-        
-        <div className="auth-links">
-          <p>Already have an account? <a href="/login">Sign in</a></p>
+
+        <div className="mt-3 text-center">
+          <p>Already have an account? <a href="/login">Login here</a></p>
         </div>
       </div>
     </div>
