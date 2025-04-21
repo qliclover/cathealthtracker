@@ -120,308 +120,272 @@ function DashboardPage() {
   }
 
   return (
-    <div className="container mt-4">
+    <div className="container">
       {/* Dashboard Header */}
-      <div className="row mb-4">
-        <div className="col">
-          <h1 className="mb-0">Dashboard</h1>
-          <p className="text-muted">Manage your cats' health and care routines</p>
-        </div>
-        <div className="col-auto">
-          <Link to="/cats/add" className="btn btn-primary">
-            <i className="bi bi-plus-circle me-2"></i>Add Cat
+      <div className="dashboard-header">
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <h1 className="dashboard-title">Welcome to Cat Health Tracker</h1>
+            <p className="dashboard-subtitle">Manage your cats' health and daily care routines</p>
+          </div>
+          <Link to="/cats/add" className="dashboard-add-btn">
+            <i className="bi bi-plus-circle me-2"></i>Add New Cat
           </Link>
         </div>
       </div>
 
-      {/* Cats Overview */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-header bg-primary bg-opacity-10">
-              <h4 className="mb-0 text-primary"><i className="bi bi-house me-2"></i>My Cats</h4>
-            </div>
-            <div className="card-body">
-              {cats.length === 0 ? (
-                <p className="text-muted">No cats yet. Click “Add Cat” to start.</p>
-              ) : (
-                <div className="row row-cols-1 row-cols-md-3 g-4">
-                  {cats.map(cat => (
-                    <div key={cat.id} className="col">
-                      <Link to={`/cats/${cat.id}`} className="text-decoration-none">
-                        <div className="card h-100 border-0 shadow-sm">
-                          {cat.imageUrl ? (
-                            <div className="text-center pt-3">
-                              <img
-                                src={cat.imageUrl}
-                                alt={cat.name}
-                                style={{ maxHeight: '150px', objectFit: 'contain' }}
-                                onError={e => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x300?text=Cat+Photo'; }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="text-center pt-3">
-                              <img
-                                src="https://placehold.co/400x300?text=Cat+Photo"
-                                alt="Default cat"
-                                style={{ maxHeight: '150px', objectFit: 'contain' }}
-                              />
-                            </div>
-                          )}
-                          <div className="card-body text-center">
-                            <h5 className="card-title mb-1">{cat.name}</h5>
-                            <p className="card-text small text-muted mb-0">{cat.breed}</p>
-                          </div>
-                        </div>
-                      </Link>
-                    </div>
-                  ))}
+      {/* Meal Schedule */}
+      <div className="dashboard-card">
+        <div className="dashboard-card-header">
+          <h2 className="dashboard-card-title">
+            <i className="bi bi-clock"></i>Today's Meal Schedule
+          </h2>
+        </div>
+        <div className="dashboard-card-body">
+          <div className="meal-schedule">
+            {mealSchedule.map(meal => (
+              <div key={meal.id} className="meal-card">
+                <div className="meal-time">{meal.time}</div>
+                <div className="meal-details">
+                  {meal.name} - {meal.food} ({meal.amount})
                 </div>
-              )}
-            </div>
+                <div
+                  className={`meal-status ${meal.completed ? 'completed' : 'pending'}`}
+                  onClick={() => markAsFed(meal.id)}
+                >
+                  {meal.completed ? 'Fed ✓' : 'Mark as Fed'}
+                </div>
+              </div>
+            ))}
           </div>
+        </div>
+      </div>
+
+      {/* Cats Overview */}
+      <div className="dashboard-card">
+        <div className="dashboard-card-header">
+          <h2 className="dashboard-card-title">
+            <i className="bi bi-house"></i>My Cats
+          </h2>
+        </div>
+        <div className="dashboard-card-body">
+          {cats.length === 0 ? (
+            <p className="text-muted">No cats yet. Add your first cat to get started!</p>
+          ) : (
+            <div className="cat-grid">
+              {cats.map(cat => (
+                <Link key={cat.id} to={`/cats/${cat.id}`} className="text-decoration-none">
+                  <div className="cat-card">
+                    <img
+                      src={cat.imageUrl || "https://placehold.co/400x300?text=Cat+Photo"}
+                      alt={cat.name}
+                      className="cat-card-img"
+                      onError={e => {
+                        e.target.onerror = null;
+                        e.target.src = "https://placehold.co/400x300?text=Cat+Photo";
+                      }}
+                    />
+                    <div className="cat-card-content">
+                      <h3 className="cat-card-name">{cat.name}</h3>
+                      <p className="cat-card-breed">{cat.breed}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Recent Health Records */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-header bg-info bg-opacity-10">
-              <h4 className="mb-0 text-info"><i className="bi bi-journal-medical me-2"></i>Recent Health Records</h4>
+      <div className="dashboard-card">
+        <div className="dashboard-card-header">
+          <h2 className="dashboard-card-title">
+            <i className="bi bi-journal-medical"></i>Recent Health Records
+          </h2>
+        </div>
+        <div className="dashboard-card-body">
+          {healthRecords.length === 0 ? (
+            <p className="text-muted">No health records yet.</p>
+          ) : (
+            <div className="health-record-list">
+              {healthRecords.map(record => (
+                <Link
+                  key={record.id}
+                  to={`/records/${record.id}/edit`}
+                  className="health-record-item text-decoration-none"
+                >
+                  <div className="health-record-header">
+                    <h3 className="health-record-title">{record.type} - {record.catName}</h3>
+                    <span className="health-record-date">
+                      {new Date(record.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="health-record-desc">{record.description}</p>
+                </Link>
+              ))}
             </div>
-            <div className="card-body">
-              {healthRecords.length === 0 ? (
-                <p className="text-muted">No health records yet.</p>
-              ) : (
-                <div className="list-group">
-                  {healthRecords.map(r => (
-                    <Link
-                      key={r.id}
-                      to={`/records/${r.id}/edit`}
-                      className="list-group-item list-group-item-action"
-                    >
-                      <div className="d-flex w-100 justify-content-between">
-                        <h6 className="mb-1">{r.type} - {r.catName}</h6>
-                        <small>{new Date(r.date).toLocaleDateString()}</small>
-                      </div>
-                      <p className="mb-1 small text-truncate">{r.description}</p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
       {/* Daily Care Tasks */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
-              <h4 className="mb-0 text-warning"><i className="bi bi-check2-circle me-2"></i>Daily Care Tasks</h4>
-              <button className="btn btn-sm btn-outline-warning" onClick={() => setShowCustomizeTaskModal(true)}>
-                <i className="bi bi-pencil-square me-1"></i>Customize Tasks
-              </button>
-            </div>
-            <div className="card-body">
-              {dailyTasks.length === 0 ? (
-                <p className="text-muted">No daily tasks yet.</p>
-              ) : (
-                <ul className="list-group">
-                  {dailyTasks.map(task => (
-                    <li
-                      key={task.id}
-                      className={`list-group-item d-flex justify-content-between align-items-center ${
-                        task.completed ? 'list-group-item-success' : ''
-                      }`}
+      <div className="dashboard-card">
+        <div className="dashboard-card-header d-flex justify-content-between align-items-center">
+          <h2 className="dashboard-card-title">
+            <i className="bi bi-check2-circle"></i>Daily Care Tasks
+          </h2>
+          <button
+            className="task-btn"
+            onClick={() => setShowCustomizeTaskModal(true)}
+          >
+            <i className="bi bi-plus-circle me-1"></i>Add Task
+          </button>
+        </div>
+        <div className="dashboard-card-body">
+          {dailyTasks.length === 0 ? (
+            <p className="text-muted">No daily tasks yet. Add some tasks to track your cats' care routine!</p>
+          ) : (
+            <div className="task-list">
+              {dailyTasks.map(task => (
+                <div key={task.id} className="task-item">
+                  <div
+                    className={`task-checkbox ${task.completed ? 'checked' : ''}`}
+                    onClick={() => toggleTaskComplete(task.id)}
+                  />
+                  <div className="task-content">
+                    <div className={`task-title ${task.completed ? 'completed' : ''}`}>
+                      {task.title}
+                    </div>
+                    <div className="task-badges">
+                      {task.repeatType !== 'none' && (
+                        <span className="task-badge">
+                          {task.repeatInterval > 1 ? `Every ${task.repeatInterval} ` : 'Every '}
+                          {task.repeatType}
+                        </span>
+                      )}
+                      <span className="task-badge">{task.startDate}</span>
+                      {task.endDate && (
+                        <span className="task-badge">until {task.endDate}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="task-actions">
+                    <button
+                      className="task-btn"
+                      onClick={() => handleDeleteTask(task.id)}
                     >
-                      <div>
-                        <span className={task.completed ? 'text-decoration-line-through' : ''}>{task.title}</span>
-                        {task.repeatType !== 'none' && (
-                          <span className="badge bg-info ms-2">
-                            {task.repeatInterval > 1 ? `Every ${task.repeatInterval} ` : 'Every '}
-                            {task.repeatType}
-                          </span>
-                        )}
-                        <span className="badge bg-secondary ms-2">{task.startDate}</span>
-                        {task.endDate && <span className="badge bg-secondary ms-2">until {task.endDate}</span>}
-                        {task.catId === 'all' ? (
-                          <span className="badge bg-secondary ms-2">All Cats</span>
-                        ) : (
-                          <span className="badge bg-secondary ms-2">{cats.find(c => c.id === task.catId)?.name}</span>
-                        )}
-                      </div>
-                      <div>
-                        <button
-                          className={`btn btn-sm ${task.completed ? 'btn-outline-success' : 'btn-success'} me-2`}
-                          onClick={() => toggleTaskComplete(task.id)}
-                        >
-                          {task.completed ? 'Done ✓' : 'Mark Done'}
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleDeleteTask(task.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                      <i className="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Daily Meal Timetable */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card">
-            <div className="card-header bg-success bg-opacity-10">
-              <h4 className="mb-0 text-success"><i className="bi bi-clock-history me-2"></i>Daily Meal Timetable</h4>
-            </div>
-            <div className="card-body">
-              <div className="table-responsive">
-                <table className="table table-bordered table-hover">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Meal</th>
-                      <th>Time</th>
-                      <th>Food Type</th>
-                      <th>Amount</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mealSchedule.map(meal => (
-                      <tr key={meal.id} className={meal.completed ? 'table-success' : ''}>
-                        <td><span className={meal.completed ? 'text-decoration-line-through' : ''}>{meal.name}</span></td>
-                        <td><span className={meal.completed ? 'text-decoration-line-through' : ''}>{meal.time}</span></td>
-                        <td><span className={meal.completed ? 'text-decoration-line-through' : ''}>{meal.food}</span></td>
-                        <td><span className={meal.completed ? 'text-decoration-line-through' : ''}>{meal.amount}</span></td>
-                        <td>
-                          <button
-                            className={`btn btn-sm ${meal.completed ? 'btn-outline-secondary' : 'btn-success'}`}
-                            onClick={() => markAsFed(meal.id)}
-                          >
-                            {meal.completed ? 'Undo' : 'Mark as Fed'}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Customize Tasks Modal */}
+      {/* Task Modal */}
       {showCustomizeTaskModal && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
+        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Customize Daily Tasks</h5>
-                <button className="btn-close" onClick={() => setShowCustomizeTaskModal(false)} />
+                <h5 className="modal-title">Add New Task</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowCustomizeTaskModal(false)}
+                ></button>
               </div>
               <div className="modal-body">
-                <div className="row g-3 mb-3">
-                  <div className="col-md-4">
-                    <label className="form-label">Task Title</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="title"
-                      value={newTask.title}
-                      onChange={handleNewTaskChange}
-                      placeholder="Enter task name"
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Cat</label>
-                    <select
-                      className="form-select"
-                      name="catId"
-                      value={newTask.catId}
-                      onChange={handleNewTaskChange}
-                    >
-                      <option value="">Select Cat</option>
-                      <option value="all">All Cats</option>
-                      {cats.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Start Date</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      name="startDate"
-                      value={newTask.startDate}
-                      onChange={handleNewTaskChange}
-                    />
-                  </div>
+                <div className="mb-3">
+                  <label className="form-label">Task Title</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="title"
+                    value={newTask.title}
+                    onChange={handleNewTaskChange}
+                  />
                 </div>
-                <div className="row g-3 mb-3">
-                  <div className="col-md-4">
-                    <label className="form-label">Repeat</label>
-                    <select
-                      className="form-select"
-                      name="repeatType"
-                      value={newTask.repeatType}
-                      onChange={handleNewTaskChange}
-                    >
-                      <option value="none">Never</option>
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="yearly">Yearly</option>
-                    </select>
-                  </div>
-                  {newTask.repeatType !== 'none' && (
-                    <>
-                      <div className="col-md-4">
-                        <label className="form-label">Interval</label>
-                        <div className="input-group">
-                          <input
-                            type="number"
-                            className="form-control"
-                            name="repeatInterval"
-                            value={newTask.repeatInterval}
-                            onChange={handleNewTaskChange}
-                            min="1"
-                          />
-                          <span className="input-group-text">{newTask.repeatType}</span>
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <label className="form-label">End Date (optional)</label>
-                        <input
-                          type="date"
-                          className="form-control"
-                          name="endDate"
-                          value={newTask.endDate}
-                          onChange={handleNewTaskChange}
-                        />
-                      </div>
-                    </>
-                  )}
+                <div className="mb-3">
+                  <label className="form-label">For Cat</label>
+                  <select
+                    className="form-select"
+                    name="catId"
+                    value={newTask.catId}
+                    onChange={handleNewTaskChange}
+                  >
+                    <option value="">Select a cat</option>
+                    <option value="all">All Cats</option>
+                    {cats.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
                 </div>
+                <div className="mb-3">
+                  <label className="form-label">Start Date</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    name="startDate"
+                    value={newTask.startDate}
+                    onChange={handleNewTaskChange}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Repeat</label>
+                  <select
+                    className="form-select"
+                    name="repeatType"
+                    value={newTask.repeatType}
+                    onChange={handleNewTaskChange}
+                  >
+                    <option value="none">No repeat</option>
+                    <option value="day">Daily</option>
+                    <option value="week">Weekly</option>
+                    <option value="month">Monthly</option>
+                  </select>
+                </div>
+                {newTask.repeatType !== 'none' && (
+                  <>
+                    <div className="mb-3">
+                      <label className="form-label">Repeat Every</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        name="repeatInterval"
+                        value={newTask.repeatInterval}
+                        onChange={handleNewTaskChange}
+                        min="1"
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">End Date (Optional)</label>
+                      <input
+                        type="date"
+                        className="form-control"
+                        name="endDate"
+                        value={newTask.endDate}
+                        onChange={handleNewTaskChange}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setShowCustomizeTaskModal(false)}>
-                  Close
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowCustomizeTaskModal(false)}
+                >
+                  Cancel
                 </button>
                 <button
+                  type="button"
                   className="btn btn-primary"
                   onClick={handleAddTask}
-                  disabled={!newTask.title.trim() || !newTask.catId}
                 >
                   Add Task
                 </button>
