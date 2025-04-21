@@ -1,6 +1,6 @@
 // src/CatDetailsPage.js
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { API_ENDPOINTS } from './config';
 
 function CatDetailsPage() {
@@ -142,181 +142,168 @@ function CatDetailsPage() {
 
   return (
     <div className="container mt-4">
-      <div className="row">
-        {/* Cat Info */}
-        <div className="col-md-6">
-          <div className="card mb-4">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2>{cat.name}</h2>
-                <div>
-                  <button className="btn btn-outline-primary me-2" onClick={handleEditCat}>
-                    <i className="bi bi-pencil-square me-2"></i>Edit
-                  </button>
-                  <button className="btn btn-outline-danger" onClick={toggleConfirmDelete}>
-                    <i className="bi bi-trash me-2"></i>Delete
-                  </button>
-                </div>
-              </div>
-
-              {cat.imageUrl ? (
-                <div className="text-center mb-3">
-                  <img
-                    src={cat.imageUrl}
-                    alt={cat.name}
-                    style={{ maxHeight: '200px', objectFit: 'contain', borderRadius: '8px' }}
-                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x300?text=Cat+Photo'; }}
-                  />
-                </div>
-              ) : (
-                <div className="text-center mb-3">
-                  <img
-                    src="https://placehold.co/400x300?text=Cat+Photo"
-                    alt="Default cat"
-                    style={{ maxHeight: '200px', objectFit: 'contain', borderRadius: '8px' }}
-                  />
-                </div>
-              )}
-
-              <p><strong>Breed:</strong> {cat.breed}</p>
-              {cat.birthdate ? (
-                <p>
-                  <strong>Birthdate:</strong>{' '}
-                  {new Date(cat.birthdate).toLocaleDateString()}{' '}
-                  <span className="badge bg-primary ms-2">{calculateAge(cat.birthdate)}</span>
-                </p>
-              ) : (
-                <p>
-                  <strong>Age:</strong>{' '}
-                  {cat.age != null ? `${cat.age} years` : 'Unknown'}
-                </p>
-              )}
-              <p><strong>Weight:</strong> {cat.weight} kg</p>
-              {cat.description && <p><strong>Description:</strong> {cat.description}</p>}
-            </div>
-          </div>
-
-          {/* Delete Confirmation */}
-          {confirmDelete && (
-            <div className="card mb-4 border-danger">
-              <div className="card-body">
-                <h5 className="card-title text-danger">Delete Cat</h5>
-                <p>Are you sure you want to delete {cat.name}? This cannot be undone.</p>
-                <div className="d-flex justify-content-end">
-                  <button className="btn btn-outline-secondary me-2" onClick={toggleConfirmDelete}>
-                    Cancel
-                  </button>
-                  <button className="btn btn-danger" onClick={handleDeleteCat}>
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Insurance */}
-          <div className="card mb-4">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h3>Insurance</h3>
-                <button className="btn btn-primary" onClick={handleAddInsurance}>
-                  <i className="bi bi-shield-plus me-2"></i>Add Insurance
-                </button>
-              </div>
-              {insurance.length === 0 ? (
-                <p className="text-muted">No insurance available</p>
-              ) : (
-                <div className="list-group">
-                  {insurance.map(pol => (
-                    <div key={pol.id} className="list-group-item">
-                      <div className="d-flex justify-content-between align-items-start">
-                        <div>
-                          <h5>{pol.provider}</h5>
-                          <p className="mb-1"><strong>Policy:</strong> {pol.policyNumber}</p>
-                          <p className="mb-1">
-                            <strong>Period:</strong>{' '}
-                            {new Date(pol.startDate).toLocaleDateString()} –{' '}
-                            {new Date(pol.endDate).toLocaleDateString()}
-                          </p>
-                          {pol.premium != null && <p><strong>Premium:</strong> ${pol.premium.toFixed(2)}</p>}
-                          {pol.coverage && <p><strong>Coverage:</strong> {pol.coverage}</p>}
-                        </div>
-                        <button
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={() => handleEditInsurance(pol.id)}
-                        >
-                          <i className="bi bi-pencil me-1"></i>Edit
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Health Records */}
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h3>Health Records</h3>
-                <button className="btn btn-primary" onClick={handleAddRecord}>
-                  <i className="bi bi-plus-circle me-2"></i>Add Record
-                </button>
-              </div>
-              {records.length === 0 ? (
-                <div className="text-center text-muted">No health records</div>
-              ) : (
-                <div className="list-group">
-                  {records.map(rec => (
-                    <div key={rec.id} className="list-group-item">
-                      <div className="d-flex justify-content-between align-items-start">
-                        <div>
-                          <span className="badge bg-info">{rec.type}</span>
-                          <small className="text-muted ms-2">
-                            <i className="bi bi-calendar3 me-1"></i>
-                            {new Date(rec.date).toLocaleDateString()}
-                          </small>
-                          <p className="mt-1 mb-1">
-                            {expandedRecords[rec.id] ? rec.description : truncate(rec.description, 100)}
-                            {rec.description.length > 100 && (
-                              <button className="btn btn-link p-0 ms-2" onClick={() => toggleExpand(rec.id)}>
-                                {expandedRecords[rec.id] ? 'Show less' : 'Read more'}
-                              </button>
-                            )}
-                          </p>
-                          {rec.notes && (
-                            <small className="text-muted">
-                              <i className="bi bi-journal-text me-1"></i>Notes: {rec.notes}
-                            </small>
-                          )}
-                          {rec.fileUrl && (
-                            <div className="mt-2">
-                              <a
-                                href={rec.fileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn btn-sm btn-outline-info"
-                              >
-                                <i className="bi bi-file-earmark me-1"></i>View Attachment
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                        <button className="btn btn-sm btn-outline-secondary" onClick={() => handleEditRecord(rec.id)}>
-                          <i className="bi bi-pencil me-1"></i>Edit
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+      {/* Cat Info Section */}
+      <div className="cat-details-header">
+        <h1 className="cat-details-title">{cat.name}</h1>
+        <div className="cat-details-actions">
+          <button className="cat-action-btn edit" onClick={handleEditCat}>
+            <i className="bi bi-pencil-square"></i>Edit
+          </button>
+          <button className="cat-action-btn delete" onClick={toggleConfirmDelete}>
+            <i className="bi bi-trash"></i>Delete
+          </button>
         </div>
       </div>
+
+      <div className="cat-details-section">
+        <img
+          src={cat.imageUrl || "https://placehold.co/400x300?text=Cat+Photo"}
+          alt={cat.name}
+          className="cat-details-photo"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "https://placehold.co/400x300?text=Cat+Photo";
+          }}
+        />
+        <div className="cat-info-grid">
+          <div className="cat-info-item">
+            <span className="cat-info-label">Breed</span>
+            <span className="cat-info-value">{cat.breed}</span>
+          </div>
+          <div className="cat-info-item">
+            <span className="cat-info-label">Birthdate</span>
+            <div>
+              <span className="cat-info-value">
+                {new Date(cat.birthdate).toLocaleDateString()}
+              </span>
+              <span className="cat-info-badge ms-2">
+                {calculateAge(cat.birthdate)}
+              </span>
+            </div>
+          </div>
+          <div className="cat-info-item">
+            <span className="cat-info-label">Weight</span>
+            <span className="cat-info-value">{cat.weight} kg</span>
+          </div>
+          {cat.description && (
+            <div className="cat-info-item">
+              <span className="cat-info-label">Description</span>
+              <span className="cat-info-value">{cat.description}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Health Records Section */}
+      <div className="cat-details-section">
+        <div className="section-header">
+          <h2 className="section-title">
+            <i className="bi bi-journal-medical"></i>
+            Health Records
+          </h2>
+          <Link to={`/cats/${id}/records/add`} className="add-record-btn">
+            Add Record
+          </Link>
+        </div>
+        <div className="section-body">
+          {records.length === 0 ? (
+            <div className="section-empty">No health records yet.</div>
+          ) : (
+            <div className="health-record-list">
+              {records.map(record => (
+                <div key={record.id} className="health-record-item">
+                  <div className="health-record-header">
+                    <h3 className="health-record-title">{record.type}</h3>
+                    <span className="health-record-date">
+                      {new Date(record.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="health-record-desc">{record.description}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Insurance Section */}
+      <div className="cat-details-section">
+        <div className="section-header">
+          <h2 className="section-title">
+            <i className="bi bi-shield-check"></i>
+            Insurance
+          </h2>
+          {insurance.length === 0 && (
+            <Link to={`/cats/${id}/insurance/add`} className="add-insurance-btn">
+              Add Insurance
+            </Link>
+          )}
+        </div>
+        <div className="section-body">
+          {insurance.length === 0 ? (
+            <div className="section-empty">No insurance information yet.</div>
+          ) : (
+            insurance.map(ins => (
+              <div key={ins.id} className="insurance-card">
+                <div className="insurance-header">
+                  <h3 className="insurance-company">{ins.company}</h3>
+                  <button
+                    className="insurance-edit-btn"
+                    onClick={() => handleEditInsurance(ins.id)}
+                  >
+                    <i className="bi bi-pencil"></i>
+                  </button>
+                </div>
+                <div className="insurance-grid">
+                  <div className="insurance-item">
+                    <span className="insurance-label">Policy Number</span>
+                    <span className="insurance-value">{ins.policyNumber}</span>
+                  </div>
+                  <div className="insurance-item">
+                    <span className="insurance-label">Period</span>
+                    <span className="insurance-value">
+                      {new Date(ins.startDate).toLocaleDateString()} - 
+                      {new Date(ins.endDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="insurance-item">
+                    <span className="insurance-label">Premium</span>
+                    <span className="insurance-value">${ins.premium}</span>
+                  </div>
+                  <div className="insurance-item">
+                    <span className="insurance-label">Coverage</span>
+                    <span className="insurance-value">{ins.coverage}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Delete Confirmation */}
+      {confirmDelete && (
+        <div className="delete-confirmation">
+          <h3 className="delete-confirmation-title">Delete Cat</h3>
+          <p className="delete-confirmation-text">
+            Are you sure you want to delete {cat.name}? This cannot be undone.
+          </p>
+          <div className="delete-confirmation-actions">
+            <button
+              className="cat-action-btn edit"
+              onClick={toggleConfirmDelete}
+            >
+              Cancel
+            </button>
+            <button
+              className="cat-action-btn delete"
+              onClick={handleDeleteCat}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
