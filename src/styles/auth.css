@@ -1,68 +1,99 @@
 /* Background */
 body {
-    background-color: #FFF8F0;
+    background-color: #f8f9fa;
   }
   
   /* Card for login/register */
   .auth-card {
-    background-color: #FFF3E0;
-    border-radius: 16px;
-    border: 1px solid #E0BCA8;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     padding: 2rem;
-    max-width: 500px;
+    max-width: 400px;
     margin: 2rem auto;
   }
   
   /* Title */
   .auth-title {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #6D4C41;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #212529;
     text-align: center;
     margin-bottom: 1.5rem;
   }
   
   /* Input fields */
   .auth-input {
-    border-radius: 8px;
-    border: 1px solid #D7CCC8;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
     padding: 0.75rem;
     margin-bottom: 1rem;
+    background-color: #f8f9fa;
+    transition: border-color 0.2s ease;
   }
   
   .auth-input:focus {
-    border-color: #FF8A65;
+    border-color: #495057;
     box-shadow: none;
+    background-color: #ffffff;
   }
   
   /* Primary button */
   .auth-btn {
-    border-radius: 8px;
-    padding: 0.6rem 1.5rem;
-    font-weight: 600;
-    background-color: #FF8A65;
+    border-radius: 6px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    background-color: #212529;
     color: white;
     border: none;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.2s ease;
     width: 100%;
   }
   
   .auth-btn:hover {
-    background-color: #F4511E;
+    background-color: #343a40;
   }
   
   /* Cancel or secondary buttons */
   .auth-btn-outline {
-    border: 2px solid #FF8A65;
+    border: 1px solid #212529;
     background: transparent;
-    color: #FF8A65;
-    transition: all 0.3s ease;
-    border-radius: 8px;
+    color: #212529;
+    transition: all 0.2s ease;
+    border-radius: 6px;
     width: 100%;
   }
   
   .auth-btn-outline:hover {
-    background-color: #FF8A65;
+    background-color: #212529;
     color: white;
+  }
+
+  /* Form labels */
+  .auth-label {
+    color: #495057;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Error messages */
+  .auth-error {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Link styles */
+  .auth-link {
+    color: #212529;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .auth-link:hover {
+    color: #343a40;
+    text-decoration: underline;
   }
