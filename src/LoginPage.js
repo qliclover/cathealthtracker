@@ -53,7 +53,7 @@ function LoginPage() {
       localStorage.setItem('token', data.token);
       
       // Navigate to cats list page
-      navigate('/dashboard');
+      navigate('/cats');
     } catch (err) {
       setError(err.message);
     } finally {
