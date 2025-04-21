@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import '../styles/navbar.css';
 
 function Navbar() {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ function Navbar() {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav className="navbar navbar-expand-lg">
       <div className="container">
         <Link className="navbar-brand" to="/">Cat Health Tracker</Link>
         
@@ -37,9 +38,9 @@ function Navbar() {
             {isLoggedIn ? (
               <>
                 <li className="nav-item">
-                <Link className="nav-link" to="/">
-                  <i className="bi bi-speedometer2 me-1"></i>Dashboard
-                </Link>
+                  <Link className="nav-link" to="/">
+                    <i className="bi bi-speedometer2 me-1"></i>Dashboard
+                  </Link>
                 </li>
                 <li className="nav-item">
                   <Link className="nav-link" to="/cats">
