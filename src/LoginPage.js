@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from './config';
+import './styles/auth.css';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -61,71 +62,68 @@ function LoginPage() {
   };
 
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6">
-          <div className="card shadow">
-            <div className="card-body">
-              <h2 className="text-center mb-4">Login</h2>
-              
-              {error && (
-                <div className="alert alert-danger" role="alert">
-                  {error}
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label htmlFor="email" className="form-label">Email</label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label htmlFor="password" className="form-label">Password</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="d-grid gap-2">
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading}
-                  >
-                    {loading ? 'Logging in...' : 'Login'}
-                  </button>
-                  
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={handleTestLogin}
-                    disabled={loading}
-                  >
-                    Use Test Account
-                  </button>
-                </div>
-              </form>
-              
-              <div className="mt-3 text-center">
-                <p>Don't have an account? <a href="/register">Register now</a></p>
-              </div>
-            </div>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-title">
+          <h2>Welcome Back</h2>
+          <p className="text-muted">Sign in to continue</p>
+        </div>
+        
+        {error && (
+          <div className="auth-alert auth-alert-danger" role="alert">
+            {error}
           </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="mb-3">
+            <label htmlFor="email" className="form-label">Email</label>
+            <input
+              type="email"
+              className="form-control"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              placeholder="Enter your email"
+            />
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="password" className="form-label">Password</label>
+            <input
+              type="password"
+              className="form-control"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              placeholder="Enter your password"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="auth-btn auth-btn-primary"
+            disabled={loading}
+          >
+            {loading ? 'Logging in...' : 'Sign In'}
+          </button>
+          
+          <button
+            type="button"
+            className="auth-btn auth-btn-secondary"
+            onClick={handleTestLogin}
+            disabled={loading}
+          >
+            Use Test Account
+          </button>
+        </form>
+        
+        <div className="auth-links">
+          <p>Don't have an account? <a href="/register">Sign up now</a></p>
         </div>
       </div>
     </div>
