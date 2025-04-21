@@ -30,9 +30,9 @@ model Cat {
   imageUrl     String?        
   owner        User           @relation(fields: [ownerId], references: [id])
   ownerId      Int
-  careTasks    CareTask[]
-  healthRecords HealthRecord[]
-  insurance    Insurance[]
+  careTasks    CareTask[]     
+  healthRecords HealthRecord[] 
+  insurance    Insurance[]    
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 }
@@ -44,7 +44,7 @@ model HealthRecord {
   description String
   notes       String?
   fileUrl     String?
-  cat         Cat      @relation(fields: [catId], references: [id])
+  cat         Cat      @relation(fields: [catId], references: [id], onDelete: Cascade)
   catId       Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -58,7 +58,7 @@ model Insurance {
   endDate      DateTime
   coverage     String?   
   premium      Float?    
-  cat          Cat       @relation(fields: [catId], references: [id])
+  cat          Cat       @relation(fields: [catId], references: [id], onDelete: Cascade)
   catId        Int
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -74,7 +74,7 @@ model CareTask {
   repeatInterval Int?    
   endDate      DateTime? 
   date        DateTime
-  cat         Cat       @relation(fields: [catId], references: [id])
+  cat         Cat       @relation(fields: [catId], references: [id], onDelete: Cascade)
   catId       Int
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
