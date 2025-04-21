@@ -7,8 +7,8 @@ function AddCatPage() {
   const [formData, setFormData] = useState({
     name: '',
     breed: '',
-    age: '',
     weight: '',
+    birthdate: '',
     description: ''
   });
   const [image, setImage] = useState(null);
@@ -94,16 +94,12 @@ function AddCatPage() {
         formDataToSend.append('image', image);
       }
 
-      if (file) {
-        formDataToSend.append('file', file);
-      }
-
       const response = await fetch(API_ENDPOINTS.CREATE_CAT, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        body: formDataToSend // Don't set Content-Type header when using FormData
+        body: formDataToSend 
       });
 
       const data = await response.json();

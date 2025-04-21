@@ -10,9 +10,8 @@ function EditCatPage() {
   const [formData, setFormData] = useState({
     name: '',
     breed: '',
-    age: '',
     weight: '',
-    birthdate: '',  // Added birthdate field
+    birthdate: '',  
     description: ''
   });
   
@@ -143,10 +142,6 @@ function EditCatPage() {
       
       if (image) {
         formDataToSend.append('image', image);
-      }
-
-      if (file) {
-        formDataToSend.append('file', file);
       }
 
       const response = await fetch(`${API_ENDPOINTS.UPDATE_CAT}/${id}`, {

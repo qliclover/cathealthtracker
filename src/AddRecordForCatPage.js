@@ -10,6 +10,7 @@ function AddRecordForCatPage() {
   const [date, setDate] = useState('');
   const [description, setDescription] = useState('');
   const [notes, setNotes] = useState('');
+  const [file, setFile] = useState(null); // Add file state
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -47,6 +48,13 @@ function AddRecordForCatPage() {
     fetchCat();
   }, [id, navigate]);
 
+  // Add handler for file input changes
+  const handleFileChange = (e) => {
+    if (e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -59,33 +67,40 @@ function AddRecordForCatPage() {
         return;
       }
 
-      const response = await fetch(API_ENDPOINTS.CREATE_RECORD, {
+      // Use FormData for potential file uploads
+      const formDataToSend = new FormData();
+      formDataToSend.append('type', type);
+      formDataToSend.append('date', date);
+      formDataToSend.append('description', description);
+      formDataToSend.append('notes', notes);
+      
+      // Add file if selected
+      if (file) {
+        formDataToSend.append('file', file);
+      }
+
+      // Construct the proper URL
+      const recordUrl = `${API_ENDPOINTS.GET_CAT}/${id}/records`;
+      console.log("Sending request to:", recordUrl);
+      
+      const response = await fetch(recordUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
+          // Don't set Content-Type for FormData
         },
-        body: JSON.stringify({
-          catId: parseInt(id),
-          type,
-          date,
-          description,
-          notes
-        })
+        body: formDataToSend
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem('token');
-          navigate('/login');
-          return;
-        }
-        throw new Error('Failed to add health record');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to add health record');
       }
 
       // Navigate to cat details page after successful addition
       navigate(`/cats/${id}`);
     } catch (err) {
+      console.error("Error adding health record:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -162,6 +177,16 @@ function AddRecordForCatPage() {
                     rows="2"
                   />
                 </div>
+                {/* Add file upload field */}
+                <div className="mb-3">
+                  <label htmlFor="file" className="form-label">Attach File (Optional)</label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    id="file"
+                    onChange={handleFileChange}
+                  />
+                </div>
                 <div className="d-grid gap-2">
                   <button
                     type="submit"
@@ -187,4 +212,4 @@ function AddRecordForCatPage() {
   );
 }
 
-export default AddRecordForCatPage; 
+export default AddRecordForCatPage;
