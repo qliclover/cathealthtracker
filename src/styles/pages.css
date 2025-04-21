@@ -427,34 +427,190 @@
   }
   
   /* Health Records */
-  .record-badge {
-    display: inline-block;
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    text-transform: capitalize;
-    border: 1px solid #f0f0f0;
+  .health-record-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
   }
   
-  .record-badge-vaccination {
-    background-color: #e8f6f3;
-    color: #2c786c;
+  .health-record-item {
+    background: white;
+    border: 1px solid #fff5f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
   }
   
-  .record-badge-checkup {
-    background-color: #fdf1ed;
+  .health-record-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+  
+  .health-record-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .health-record-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .health-record-date {
+    color: #8c4a3f;
+    font-size: 0.9rem;
+  }
+  
+  .health-record-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .record-action-btn {
+    background: none;
+    border: none;
+    color: #8c4a3f;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .record-action-btn:hover {
+    background: #fff5f0;
+    color: #d46c4e;
+  }
+  
+  .record-action-btn.delete:hover {
+    background: #ffe8e8;
     color: #e85d3f;
   }
   
+  .health-record-desc {
+    color: #4a4a4a;
+    line-height: 1.6;
+    margin: 0;
+  }
+  
+  .record-attachment-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background: #fff5f0;
+    color: #d46c4e;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+  
+  .record-attachment-btn:hover {
+    background: #ffeae5;
+    transform: translateY(-1px);
+  }
+  
+  /* Record Badges */
+  .record-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  
+  .record-badge-vaccination {
+    background: #e8f6f3;
+    color: #2c786c;
+  }
+  
   .record-badge-medication {
-    background-color: #f5f0e6;
+    background: #fff5f0;
+    color: #d46c4e;
+  }
+  
+  .record-badge-checkup {
+    background: #f5f0e6;
     color: #d4a373;
   }
   
   .record-badge-other {
-    background-color: #f0f0f0;
+    background: #f0f0f0;
     color: #6d4c47;
+  }
+  
+  /* Delete Confirmation */
+  .delete-confirmation {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 500px;
+    z-index: 1000;
+  }
+  
+  .delete-confirmation::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+  }
+  
+  .delete-confirmation-title {
+    color: #e85d3f;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  
+  .delete-confirmation-text {
+    color: #4a4a4a;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+  
+  .delete-confirmation-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+  }
+  
+  /* Loading Spinner */
+  .loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 50vh;
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #fff5f0;
+    border-top-color: #d46c4e;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
   
   /* Empty state with cat illustrations */
@@ -635,50 +791,6 @@
   color: #6d4c47;
   font-size: 0.9rem;
   opacity: 0.8;
-}
-
-/* Health Records */
-.health-record-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.health-record-item {
-  background: #fff;
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
-  padding: 1rem;
-  transition: all 0.2s ease;
-}
-
-.health-record-item:hover {
-  background-color: #fafafa;
-  transform: translateX(4px);
-}
-
-.health-record-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.health-record-title {
-  color: #2c786c;
-  font-weight: 600;
-  margin: 0;
-}
-
-.health-record-date {
-  color: #e85d3f;
-  font-size: 0.9rem;
-}
-
-.health-record-desc {
-  color: #4a4a4a;
-  font-size: 0.95rem;
-  margin: 0;
 }
 
 /* Tasks */
