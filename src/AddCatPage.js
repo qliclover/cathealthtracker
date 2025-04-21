@@ -94,6 +94,10 @@ function AddCatPage() {
         formDataToSend.append('image', image);
       }
 
+      if (file) {
+        formDataToSend.append('file', file);
+      }
+
       const response = await fetch(API_ENDPOINTS.CREATE_CAT, {
         method: 'POST',
         headers: {

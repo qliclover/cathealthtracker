@@ -145,6 +145,10 @@ function EditCatPage() {
         formDataToSend.append('image', image);
       }
 
+      if (file) {
+        formDataToSend.append('file', file);
+      }
+
       const response = await fetch(`${API_ENDPOINTS.UPDATE_CAT}/${id}`, {
         method: 'PUT',
         headers: {
