@@ -66,7 +66,7 @@ function LoginPage() {
       <div className="auth-card">
         <div className="auth-title">
           <h2>Welcome Back</h2>
-          <p className="text-muted">Sign in to continue</p>
+          <p>Sign in to continue</p>
         </div>
         
         {error && (
@@ -75,8 +75,8 @@ function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="mb-3">
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="form-group">
             <label htmlFor="email" className="form-label">Email</label>
             <input
               type="email"
@@ -90,7 +90,7 @@ function LoginPage() {
             />
           </div>
 
-          <div className="mb-3">
+          <div className="form-group">
             <label htmlFor="password" className="form-label">Password</label>
             <input
               type="password"
@@ -106,15 +106,15 @@ function LoginPage() {
 
           <button
             type="submit"
-            className="auth-btn auth-btn-primary"
+            className="btn btn-primary"
             disabled={loading}
           >
-            {loading ? 'Logging in...' : 'Sign In'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
           
           <button
             type="button"
-            className="auth-btn auth-btn-secondary"
+            className="btn btn-secondary"
             onClick={handleTestLogin}
             disabled={loading}
           >
@@ -123,7 +123,7 @@ function LoginPage() {
         </form>
         
         <div className="auth-links">
-          <p>Don't have an account? <a href="/register">Sign up now</a></p>
+          <p>Don't have an account? <a href="/register">Sign up</a></p>
         </div>
       </div>
     </div>

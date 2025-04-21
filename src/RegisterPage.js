@@ -58,7 +58,7 @@ function RegisterPage() {
       <div className="auth-card">
         <div className="auth-title">
           <h2>Create Account</h2>
-          <p className="text-muted">Join us to start tracking your cat's health</p>
+          <p>Join us to track your cat's health</p>
         </div>
         
         {error && (
@@ -67,9 +67,9 @@ function RegisterPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="mb-3">
-            <label htmlFor="name" className="form-label">Full Name</label>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="name" className="form-label">Name</label>
             <input
               type="text"
               className="form-control"
@@ -78,11 +78,11 @@ function RegisterPage() {
               value={formData.name}
               onChange={handleChange}
               required
-              placeholder="Enter your full name"
+              placeholder="Enter your name"
             />
           </div>
 
-          <div className="mb-3">
+          <div className="form-group">
             <label htmlFor="email" className="form-label">Email</label>
             <input
               type="email"
@@ -96,7 +96,7 @@ function RegisterPage() {
             />
           </div>
 
-          <div className="mb-3">
+          <div className="form-group">
             <label htmlFor="password" className="form-label">Password</label>
             <input
               type="password"
@@ -112,10 +112,10 @@ function RegisterPage() {
 
           <button
             type="submit"
-            className="auth-btn auth-btn-primary"
+            className="btn btn-primary"
             disabled={loading}
           >
-            {loading ? 'Creating Account...' : 'Sign Up'}
+            {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
         
