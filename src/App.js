@@ -117,13 +117,13 @@ function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/" element={
+          <Route path="/dashboard" element={
             <ProtectedRoute>
               <DashboardPage />
             </ProtectedRoute>
           } />
-          {/* Default route */}
-          <Route path="/" element={<Navigate to="/cats" replace />} />
+
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           
           {/* 404 route */}
           <Route path="*" element={

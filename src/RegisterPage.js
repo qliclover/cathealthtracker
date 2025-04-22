@@ -44,7 +44,6 @@ function RegisterPage() {
       // Save token to localStorage
       localStorage.setItem('token', data.token);
       
-      // Navigate to cats list page
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
