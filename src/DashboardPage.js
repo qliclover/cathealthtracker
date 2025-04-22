@@ -115,7 +115,7 @@ function DashboardPage() {
           });
           if (rRes.ok) {
             const list = await rRes.json();
-            recs.push(...list.map(r => ({ ...r, catName: cat.name })));
+            recs.push(...list.map(r => ({ ...r, catName: cat.name, catId: cat.id })));
           }
         }
         recs.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -243,7 +243,7 @@ function DashboardPage() {
               {healthRecords.map(record => (
                 <Link
                   key={record.id}
-                  to={`/records/${record.id}/edit`}
+                  to={`/cats/${record.catId}`}
                   className="health-record-item text-decoration-none"
                 >
                   <div className="health-record-header">
