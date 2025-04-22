@@ -57,7 +57,6 @@ function App() {
     <div className="fade-in">
       {/* show navbar only if render compleate */}
       {localStorage.getItem('token') && <Navbar />}
-      <Navbar />
       <div className="container mt-4">
         <Routes>
           {/* Public routes */}
