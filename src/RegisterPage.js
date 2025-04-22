@@ -41,6 +41,9 @@ function RegisterPage() {
         throw new Error(data.message || 'Registration failed');
       }
 
+      // Clear localstorage
+      localStorage.removeItem('dailyTasks');
+
       // Save token to localStorage
       localStorage.setItem('token', data.token);
       

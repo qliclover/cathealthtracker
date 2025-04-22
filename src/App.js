@@ -34,6 +34,8 @@ function App() {
     
     // If user is not logged in and not on login/register page, redirect to login page
     if (!token) {
+      localStorage.removeItem('dailyTasks');
+      
       const path = window.location.pathname;
       if (path !== '/login' && path !== '/register') {
         navigate('/login');
