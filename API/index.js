@@ -146,6 +146,7 @@ const authenticateToken = (req, res, next) => {
 // UTILITY FUNCTIONS
 // =============================================================================
 // Helper function to get ordinal suffix for numbers (1st, 2nd, 3rd, etc.)
+// Calculate age by entering birthdate
 function getSuffix(num) {
   const j = num % 10,
         k = num % 100;
@@ -178,9 +179,6 @@ app.get('/', (req, res) => {
     }
   });
 });
-
-// Ignore favicon requests
-app.get('/favicon.ico', (req, res) => res.sendStatus(204));
 
 // AUTHENTICATION ROUTES
 // =============================================================================
@@ -649,7 +647,7 @@ app.get('/api/cats/:catId/records', authenticateToken, async (req, res) => {
   }
 });
 
-// GET a single health record by ID (for editing)
+// GET a single health record by ID for editing
 app.get('/api/records/:id', authenticateToken, async (req, res) => {
   try {
     const recordId = parseInt(req.params.id);
@@ -1478,9 +1476,10 @@ app.get('/api/calendar.ics', async (req, res) => {
           };
           
           // Add repeating rule if this is a recurring task
+          // DAILY, WEEKLY, MONTHLY, YEARLY
           if (task.repeatType && task.repeatType !== 'none') {
             const rruleObj = {
-              freq: task.repeatType.toUpperCase(), // DAILY, WEEKLY, MONTHLY, YEARLY
+              freq: task.repeatType.toUpperCase(), 
             };
             
             // Add interval if specified (e.g., every 2 weeks)

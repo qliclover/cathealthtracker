@@ -52,7 +52,7 @@ function HealthCalendarPage() {
           return;
         }
 
-        // Fetch all cats (used locally for naming)
+        // Fetch all cats
         const catsRes = await fetch(API_ENDPOINTS.GET_CATS, {
           headers: { 'Authorization': `Bearer ${token}` }
         });

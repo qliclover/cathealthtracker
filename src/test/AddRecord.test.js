@@ -21,7 +21,7 @@ test('submits form with health record info', async () => {
   // Mock GET cat info
   fetch.mockResolvedValueOnce({
     ok: true,
-    json: async () => ({ id: 123, name: 'Whiskers' }),
+    json: async () => ({ id: 123, name: 'Stitch' }),
   });
 
   // Mock POST health record
@@ -30,7 +30,7 @@ test('submits form with health record info', async () => {
   renderWithRouter();
 
   // Load cat
-  await screen.findByText(/add health record for whiskers/i);
+  await screen.findByText(/add health record for Stitch/i);
 
   fireEvent.change(screen.getByLabelText(/record type/i), {
     target: { value: 'checkup' },
