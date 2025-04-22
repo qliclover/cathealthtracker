@@ -15,7 +15,6 @@ function DashboardPage() {
     { id: 3, name: 'Evening', time: '12:00 AM',  food: 'Raw', amount: '2oz', completed: false }
   ]);
 
-  // 编辑膳食状态和函数
   const [showEditMealModal, setShowEditMealModal] = useState(false);
   const [editingMeal, setEditingMeal] = useState(null);
 
@@ -181,11 +180,10 @@ function DashboardPage() {
                     {meal.completed ? 'Fed ✓' : 'Mark as Fed'}
                   </div>
                   <button
-                    className="meal-edit-btn"
+                    className="btn btn-sm btn-outline-secondary"
                     onClick={() => handleEditMeal(meal)}
-                    title="Edit meal"
                   >
-                    <i className="bi bi-pencil"></i>
+                    <i className="bi bi-pencil"></i>Edit
                   </button>
                 </div>
               </div>
