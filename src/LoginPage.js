@@ -20,14 +20,6 @@ function LoginPage() {
     }));
   };
 
-  // const handleTestLogin = () => {
-  //   setFormData({
-  //     email: 'test2@example.com',
-  //     password: 'password123'
-  //   });
-  //   // Auto submit form
-  //   handleSubmit(new Event('submit'));
-  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -62,11 +54,11 @@ function LoginPage() {
   };
 
   return (
-    <div className="auth-container">
+    <main className="auth-container" role="main">
       <div className="row justify-content-center">
         <div className="col-md-6">
           <div className="auth-card">
-            <h2 className="auth-title">Welcome Back</h2>
+            <h1 className="auth-title">Welcome Back</h1>
               
             {error && (
               <div className="alert alert-danger" role="alert">
@@ -80,6 +72,7 @@ function LoginPage() {
                 <input
                   type="email"
                   className="form-control"
+                  aria-label="Input for email"
                   id="email"
                   name="email"
                   value={formData.email}
@@ -93,6 +86,7 @@ function LoginPage() {
                 <input
                   type="password"
                   className="form-control"
+                  aria-label="Input for password"
                   id="password"
                   name="password"
                   value={formData.password}
@@ -105,6 +99,7 @@ function LoginPage() {
                 type="submit"
                 className="btn btn-primary auth-btn"
                 disabled={loading}
+                aria-label="Submit form"
               >
                 {loading ? 'Logging in...' : 'Login'}
               </button>
@@ -112,15 +107,6 @@ function LoginPage() {
               <div className="auth-divider">
                 <span className="auth-divider-text">or</span>
               </div>
-              
-              {/* <button
-                type="button"
-                className="btn btn-secondary auth-btn"
-                onClick={handleTestLogin}
-                disabled={loading}
-              >
-                Use Test Account
-              </button> */}
             </form>
             
             <div className="text-center">
@@ -129,7 +115,7 @@ function LoginPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
