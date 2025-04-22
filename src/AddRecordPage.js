@@ -107,7 +107,7 @@ function AddRecordPage() {
         throw new Error('Failed to add health record');
       }
 
-      // 提交成功后跳转回猫咪详情页
+      // Return to catspage
       navigate(`/cats/${id}`);
     } catch (err) {
       setError(err.message);
