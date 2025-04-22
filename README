@@ -1,0 +1,16 @@
+# Cat Health Tracker
+# Qian Li
+# CS5610 - Final Project
+A full-featured web app to help cat owners manage their pets' health, feeding schedules, daily care routines, and insurance information.
+
+https://cathealthtracker.vercel.app/dashboard
+
+## Features
+
+- **Cat Profiles**: Add multiple cats with details like name, breed, age, weight, and photo
+- **Health Records**: Track vaccinations, checkups, medications, and other health-related events
+- **Daily Care Tasks**: Create, repeat, and complete tasks like grooming and litter cleaning
+- **Feeding Schedule**: Visual daily meal planner with completion status
+- **Health Calendar**: Integrated view of upcoming tasks and medical events
+- **Insurance Management**: Store policy information and manage coverage for each cat
+- **Accessibility**: WCAG 2.1 compliant with Lighthouse scores ≥ 80
