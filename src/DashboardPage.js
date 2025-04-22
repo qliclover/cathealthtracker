@@ -15,6 +15,31 @@ function DashboardPage() {
     { id: 3, name: 'Evening', time: '12:00 AM',  food: 'Raw', amount: '2oz', completed: false }
   ]);
 
+  // 编辑膳食状态和函数
+  const [showEditMealModal, setShowEditMealModal] = useState(false);
+  const [editingMeal, setEditingMeal] = useState(null);
+
+  const handleEditMeal = (meal) => {
+    setEditingMeal(meal);
+    setShowEditMealModal(true);
+  };
+
+  const handleSaveMeal = () => {
+    setMealSchedule(ms => 
+      ms.map(m => m.id === editingMeal.id ? editingMeal : m)
+    );
+    setShowEditMealModal(false);
+    setEditingMeal(null);
+  };
+
+  const handleMealChange = (e) => {
+    const { name, value } = e.target;
+    setEditingMeal(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   // Mark a meal as fed / undo
   const markAsFed = (id) => {
     setMealSchedule(ms =>
@@ -148,11 +173,20 @@ function DashboardPage() {
                 <div className="meal-details">
                   {meal.name} - {meal.food} ({meal.amount})
                 </div>
-                <div
-                  className={`meal-status ${meal.completed ? 'completed' : 'pending'}`}
-                  onClick={() => markAsFed(meal.id)}
-                >
-                  {meal.completed ? 'Fed ✓' : 'Mark as Fed'}
+                <div className="meal-actions">
+                  <div
+                    className={`meal-status ${meal.completed ? 'completed' : 'pending'}`}
+                    onClick={() => markAsFed(meal.id)}
+                  >
+                    {meal.completed ? 'Fed ✓' : 'Mark as Fed'}
+                  </div>
+                  <button
+                    className="meal-edit-btn"
+                    onClick={() => handleEditMeal(meal)}
+                    title="Edit meal"
+                  >
+                    <i className="bi bi-pencil"></i>
+                  </button>
                 </div>
               </div>
             ))}
@@ -388,6 +422,82 @@ function DashboardPage() {
                   onClick={handleAddTask}
                 >
                   Add Task
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Meal Edit Modal */}
+      {showEditMealModal && editingMeal && (
+        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Edit Meal</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowEditMealModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Meal Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="name"
+                    value={editingMeal.name}
+                    onChange={handleMealChange}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Time</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="time"
+                    value={editingMeal.time}
+                    onChange={handleMealChange}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Food</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="food"
+                    value={editingMeal.food}
+                    onChange={handleMealChange}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Amount</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="amount"
+                    value={editingMeal.amount}
+                    onChange={handleMealChange}
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowEditMealModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSaveMeal}
+                >
+                  Save Changes
                 </button>
               </div>
             </div>
