@@ -43,6 +43,7 @@ function LoginPage() {
 
       // Save token to localStorage
       localStorage.setItem('token', data.token);
+      localStorage.removeItem('dailyTasks');
       
       navigate('/dashboard');
     } catch (err) {
