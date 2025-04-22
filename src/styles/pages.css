@@ -831,6 +831,15 @@
   gap: 0.5rem;
 }
 
+.task-btn {
+  background: none;
+  border: none;
+  color: #6d4c47;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
 .task-actions .task-btn {
   width: 32px;
   height: 32px;
