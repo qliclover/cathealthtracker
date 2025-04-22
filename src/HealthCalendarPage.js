@@ -13,6 +13,35 @@ function HealthCalendarPage() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // Helper function to generate recurring events
+  const generateRecurringEvents = (task, start, endDate, catName) => {
+    const events = [];
+    const interval = parseInt(task.repeatInterval, 10) || 1;
+    const current = new Date(start);
+    
+    while (current <= endDate) {
+      // Create event for current date
+      events.push({
+        id: `task-${task.id}-${current.toISOString()}`,
+        title: `${task.title} (${catName})`,
+        start: new Date(current),
+        end: new Date(current),
+        allDay: true
+      });
+      
+      // Advance to next occurrence based on repeat type
+      if (task.repeatType === 'day') {
+        current.setDate(current.getDate() + interval);
+      } else if (task.repeatType === 'week') {
+        current.setDate(current.getDate() + (7 * interval));
+      } else if (task.repeatType === 'month') {
+        current.setMonth(current.getMonth() + interval);
+      }
+    }
+    
+    return events;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -80,21 +109,13 @@ function HealthCalendarPage() {
               allDay: true
             });
           } else {
-            // generate up to one year ahead
-            const interval = parseInt(t.repeatInterval, 10) || 1;
+            // Generate recurring events
             const endDate = t.endDate
               ? new Date(t.endDate)
               : new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-            for (let dt = new Date(start); dt <= endDate; dt.setMonth(dt.getMonth() + interval)) {
-              const occurrence = new Date(dt);
-              taskEvents.push({
-                id:    `task-${t.id}-${occurrence.toISOString()}`,
-                title: `${t.title} (${catName})`,
-                start: occurrence,
-                end:   occurrence,
-                allDay: true
-              });
-            }
+              
+            const recurringEvents = generateRecurringEvents(t, start, endDate, catName);
+            taskEvents.push(...recurringEvents);
           }
         });
 
