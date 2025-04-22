@@ -155,10 +155,10 @@ function CatDetailsPage() {
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2>{cat.name}</h2>
                 <div>
-                  <button className="btn btn-outline-primary me-2" onClick={handleEditCat}>
+                  <button className="btn btn-outline-primary me-2" onClick={handleEditCat} aria-label="Edit cat">
                     <i className="bi bi-pencil-square me-2"></i>Edit
                   </button>
-                  <button className="btn btn-outline-danger" onClick={toggleConfirmDelete}>
+                  <button className="btn btn-outline-danger" onClick={toggleConfirmDelete } aria-label="Delete cat">
                     <i className="bi bi-trash me-2"></i>Delete
                   </button>
                 </div>
