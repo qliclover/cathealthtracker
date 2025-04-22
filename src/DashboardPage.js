@@ -274,7 +274,7 @@ function DashboardPage() {
                       className="task-btn"
                       onClick={() => handleDeleteTask(task.id)}
                     >
-                      <i className="bi bi-trash"></i>
+                      <i className="bi bi-x"></i>
                     </button>
                   </div>
                 </div>

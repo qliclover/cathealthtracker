@@ -840,9 +840,10 @@
   border-radius: 4px;
   transition: all 0.2s ease;
 }
+
 .task-actions .task-btn {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -853,16 +854,17 @@
   transition: all 0.2s ease;
 }
 
-.task-actions .task-btn i.bi-trash {
-  font-size: 0.9rem;
+.task-actions .task-btn i.bi-x {
+  font-size: 1rem;
   color: #dc3545;
+  font-weight: bold;
 }
 
 .task-actions .task-btn:hover {
   background-color: #dc3545;
 }
 
-.task-actions .task-btn:hover i.bi-trash {
+.task-actions .task-btn:hover i.bi-x {
   color: #fff;
 }
 
