@@ -11,8 +11,8 @@ function DashboardPage() {
   // Meal timetable state
   const [mealSchedule, setMealSchedule] = useState([
     { id: 1, name: 'Morning', time: '12:00 PM', food: 'Raw', amount: '2oz', completed: false },
-    { id: 2, name: 'Noon',    time: '2:30 PM',  food: 'Raw', amount: '2oz', completed: false },
-    { id: 3, name: 'Evening', time: '8:00 PM',  food: 'Dry Raw', amount: '2oz', completed: false }
+    { id: 2, name: 'Noon',    time: '5:00 PM',  food: 'Raw', amount: '2oz', completed: false },
+    { id: 3, name: 'Evening', time: '12:00 AM',  food: 'Raw', amount: '2oz', completed: false }
   ]);
 
   // Mark a meal as fed / undo
@@ -273,6 +273,7 @@ function DashboardPage() {
                     <button
                       className="task-btn"
                       onClick={() => handleDeleteTask(task.id)}
+                      title="Delete task"
                     >
                       <i className="bi bi-x"></i>
                     </button>
